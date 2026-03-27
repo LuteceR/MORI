@@ -4,15 +4,18 @@ useHead({
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { rel: 'icon', 
+      type: 'image/x-icon', 
+      href: '/logo.svg',
+      sizes: '64x64' }
   ],
   htmlAttrs: {
-    lang: 'en'
+    lang: 'ru'
   }
 })
 
-const title = 'Nuxt Starter Template'
-const description = 'A production-ready starter template powered by Nuxt UI. Build beautiful, accessible, and performant applications in minutes, not hours.'
+const title = 'МОРИ'
+const description = 'МОРИ - Машинное Обучение : Разворачивание и Исследование.'
 
 useSeoMeta({
   title,
@@ -30,7 +33,7 @@ useSeoMeta({
     <UHeader>
       <template #left>
         <NuxtLink to="/">
-          <AppLogo class="w-auto h-6 shrink-0" />
+          <AppLogo class="w-auto h-12 shrink-0" />
         </NuxtLink>
 
         <TemplateMenu />
@@ -50,9 +53,9 @@ useSeoMeta({
       </template>
     </UHeader>
 
-    <UMain>
+    <NuxtLayout>
       <NuxtPage />
-    </UMain>
+    </NuxtLayout>
 
     <USeparator icon="i-simple-icons-nuxtdotjs" />
 

@@ -1,12 +1,30 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: [
-    '@nuxt/eslint',
-    '@nuxt/ui'
-  ],
+  modules: ['@nuxt/eslint', '@nuxt/ui', 'nuxt-lucide-icons'],
+
+  ssr: true,
+
+  ui: {
+    theme: {
+      colors: [
+        'primary',
+        'primary-foreground',
+        'info',
+        'secondary',
+        'success',
+        'error',
+        'neutral',
+        'warning',
+      ],
+    },
+  },
 
   devtools: {
-    enabled: true
+    enabled: true,
+
+    timeline: {
+      enabled: true
+    }
   },
 
   css: ['~/assets/css/main.css'],
