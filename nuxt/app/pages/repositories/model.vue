@@ -11,17 +11,6 @@ import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import { z } from 'zod';
 
-const colorMode = useColorMode()
-
-const isDark = computed({
-  get() {
-    return colorMode.value === 'dark'
-  },
-  set(_isDark) {
-    colorMode.preference = _isDark ? 'dark' : 'light'
-  }
-})
-
 const formSchema = z.object({
   login: z
     .string()
@@ -51,36 +40,29 @@ const remember = ref(false);
 </script>
 
 <template>
-    <ClientOnly v-if="!colorMode?.forced">
-        <div>
-            <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
-                <div class="flex flex-col items-center text-center space-y-4">
-                    <div id="logo" class="flex items-center flex-col">
-                        <h1 
-                        class="font-mono text-7xl font-bold transform transition-all duration-200"
-                        :class="isDark? 'text-gray-300' : 'text-gray-800'"
-                        >
-                            МОРИ
-                        </h1>
-                        <p 
-                        class="mt-4 font-sans text-2xl/2 opacity-0 sm:opacity-100
-                                transform transition-all duration-200"
-                        :class="isDark? 'text-gray-300' : 'text-gray-800'">
-                            Машинное Обучение :
-                        </p>
-                        <p class="mt-2 font-sans text-2xl opacity-0 sm:opacity-100
-                                transform transition-all duration-200"
-                            :class="isDark? 'text-gray-300' : 'text-gray-800'">
-                            Разворачивание и Исследование
-                        </p>
-                    </div>
+
+    <div>
+        <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
+            <div class="flex flex-col items-center text-center space-y-4">
+                <div id="logo" class="flex items-center flex-col">
+                    <h1 class="font-mono text-7xl font-bold text-gray-300">
+                        МОРИ
+                    </h1>
+                    <p class="mt-4 font-sans text-2xl/2 text-gray-400 opacity-0 sm:opacity-100
+                              transform transition-all duration-400">
+                        Машинное Обучение :
+                    </p>
+                    <p class="mt-2 font-sans text-2xl text-gray-400 opacity-0 sm:opacity-100
+                              transform transition-all duration-400">
+                        Разворачивание и Исследование
+                    </p>
                 </div>
             </div>
         </div>
-    </ClientOnly>
+    </div>
 
     <form id="authForm" @submit="onSubmit">
-        <div class="flex flex-col p-6 rounded-md w-full absoulute -mt-45 sm:-mt-10
+        <div class="flex flex-col p-6 rounded-[6px] w-full absoulute -mt-45 sm:-mt-10
                     bg-transparent md:w-170 lg:w-110 m-auto
                     transform transition-all duration-400">
             <UFieldGroup class="flex flex-col" :schema="formSchema" eager-validation>
@@ -92,14 +74,9 @@ const remember = ref(false);
                         v-bind="field"
                         type="login"
                         size="lg"
-                        placeholder="MyLogin"
-                        class="w-full"
-                        :aria-invalid="errorMessage? true : false"
-                        :ui="{
-                            base: [
-                                'rounded-md!'
-                            ]
-                        }"
+                        placeholder="MyLogin" 
+                        class="w-full rounded-md"
+                        :aria-invalid="!!errorMessage"
                         />
                   </UFormField>
                 </VeeField>
@@ -107,7 +84,7 @@ const remember = ref(false);
               <VeeField v-slot="{ field, errorMessage }" name="password">
                 <div class="flex flex-col w-full mt-2">
                     <UFormField class="text-slate-300 mb-3 md:text-[1rem] lg:text-[1rem]" label="пароль" :error="errorMessage">
-                    <div class="flex flex-row rounded-md">
+                    <div class="flex flex-row rounded-[6px]">
                         <UInput 
                           id="password"
                           v-bind="field"
@@ -132,13 +109,13 @@ const remember = ref(false);
             </UFieldGroup>
             <div class="flex flex-row justify-between w-full mt-4 space-x-4">
                 <div class="flex gap-2">
-                    <USwitch
+                    <USwitch 
                     v-model="remember" 
                     id="rememberMe" 
-                    class=""/>
+                    class="hover:cursor-pointer"/>
                     <UFormField label="Запомнить меня"></UFormField>
                 </div>
-                <ULink as="button" href="/reg" right>не зарегестрированы?</ULink>
+                
             </div>
             <UButton
                 color="primary"

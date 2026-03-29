@@ -11,6 +11,17 @@ import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import { z } from 'zod';
 
+const colorMode = useColorMode()
+
+const isDark = computed({
+  get() {
+    return colorMode.value === 'dark'
+  },
+  set(_isDark) {
+    colorMode.preference = _isDark ? 'dark' : 'light'
+  }
+})
+
 const formSchema = z.object({
   login: z
     .string()
@@ -44,25 +55,33 @@ const remember = ref(false);
 
 <template>
 
-    <div>
-        <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
-            <div class="flex flex-col items-center text-center space-y-4">
-                <div id="logo" class="flex items-center flex-col">
-                    <h1 class="font-mono text-7xl font-bold text-gray-300">
-                        МОРИ
-                    </h1>
-                    <p class="mt-4 font-sans text-2xl/2 text-gray-400 opacity-0 sm:opacity-100
-                              transform transition-all duration-400">
-                        Машинное Обучение :
-                    </p>
-                    <p class="mt-2 font-sans text-2xl text-gray-400 opacity-0 sm:opacity-100
-                              transform transition-all duration-400">
-                        Разворачивание и Исследование
-                    </p>
+    <ClientOnly v-if="!colorMode?.forced">
+        <div>
+            <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
+                <div class="flex flex-col items-center text-center space-y-4">
+                    <div id="logo" class="flex items-center flex-col">
+                        <h1 
+                        class="font-mono text-7xl font-bold transform transition-all duration-200"
+                        :class="isDark? 'text-gray-300' : 'text-gray-800'"
+                        >
+                            МОРИ
+                        </h1>
+                        <p 
+                        class="mt-4 font-sans text-2xl/2 opacity-0 sm:opacity-100
+                                transform transition-all duration-200"
+                        :class="isDark? 'text-gray-300' : 'text-gray-800'">
+                            Машинное Обучение :
+                        </p>
+                        <p class="mt-2 font-sans text-2xl opacity-0 sm:opacity-100
+                                transform transition-all duration-200"
+                            :class="isDark? 'text-gray-300' : 'text-gray-800'">
+                            Разворачивание и Исследование
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </ClientOnly>
 
     <form id="authForm" @submit="onSubmit">
         <div class="flex flex-col p-6 rounded-[6px] w-full absoulute -mt-45 sm:-mt-10
@@ -86,6 +105,11 @@ const remember = ref(false);
                         autocomplete="off"
                         :aria-invalid="!!errorMessage"
                         required
+                        :ui="{
+                            base: [
+                                'rounded-md!'
+                            ]
+                        }"
                         />
                   </UFormField>
                 </VeeField>
@@ -108,6 +132,11 @@ const remember = ref(false);
                         autocomplete="off"
                         trailing-icon="i-lucide-at-sign"
                         :aria-invalid="!!errorMessage"
+                        :ui="{
+                            base: [
+                                'rounded-md!'
+                            ]
+                        }"
                         />
                   </UFormField>
                 </VeeField>
@@ -130,9 +159,9 @@ const remember = ref(false);
                         @click = 'isTogglePassword = !isTogglePassword' 
                         variant="outline" 
                         size="lg"
-                        class="flex self-center rounded-l-none!"
+                        class="flex self-center rounded-l-none"
                         :icon="isTogglePassword ? 'i-lucide-eye' : 'i-lucide-eye-off'"
-                        :color="errorMessage && 'error'">
+                        :color='errorMessage? "error" : "primary"'>
                     </UButton>
                     </div>
                     </UFormField>
@@ -144,10 +173,9 @@ const remember = ref(false);
                     <USwitch 
                     v-model="remember" 
                     id="rememberMe" 
-                    class="hover:cursor-pointer"/>
+                    class=""/>
                     <UFormField label="Запомнить меня"></UFormField>
                 </div>
-                <ULink as="button" right>не зарегестрированы?</ULink>
             </div>
             <UButton
                 color="primary"

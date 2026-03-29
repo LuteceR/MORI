@@ -6,7 +6,7 @@ useHead({
   link: [
     { rel: 'icon', 
       type: 'image/x-icon', 
-      href: '/logo.svg',
+      href: 'logo.svg',
       sizes: '64x64' }
   ],
   htmlAttrs: {
@@ -29,27 +29,18 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="ru">
     <UHeader>
       <template #left>
         <NuxtLink to="/">
-          <AppLogo class="w-auto h-12 shrink-0" />
+          <AppLogo />
         </NuxtLink>
 
         <TemplateMenu />
       </template>
 
       <template #right>
-        <UColorModeButton />
-
-        <UButton
-          to="https://github.com/nuxt-ui-templates/starter"
-          target="_blank"
-          icon="i-simple-icons-github"
-          aria-label="GitHub"
-          color="neutral"
-          variant="ghost"
-        />
+        <UColorModeSelect />
       </template>
     </UHeader>
 
