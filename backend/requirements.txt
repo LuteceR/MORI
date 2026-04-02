@@ -1,0 +1,9 @@
+hypercorn
+psycopg2-binary
+fastapi
+aiofiles
+pydantic-settings
+python-multipart
+
+pandas
+spacy
