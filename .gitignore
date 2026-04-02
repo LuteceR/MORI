@@ -1,0 +1,8 @@
+/backend/__pycache__
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+
