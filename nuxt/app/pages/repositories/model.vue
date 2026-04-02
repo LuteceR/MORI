@@ -9,121 +9,61 @@ import { ref, onMounted, onUnmounted, h } from 'vue';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
 import { toast } from 'vue-sonner';
-import { z } from 'zod';
+import type { collapsible } from '#build/ui';
 
-const formSchema = z.object({
-  login: z
-    .string()
-    .min(5, 'login error length is less then 5')
-    .max(32, 'login error length is more then 32'),
-  password: z
-    .string()
-    .min(20, 'pass error')
-    .max(100, 'pass error   2'),
-})
-
-const { handleSubmit, errors } = useForm({
-  validationSchema: toTypedSchema(formSchema),
-  initialValues: {
-    login: '',
-    password: '',
+const items = ref<TreeItem[]>([
+  {
+    label: 'app/',
+    defaultExpanded: true,
+    children: [
+      {
+        label: 'composables/',
+        children: [
+          {
+            label: 'useAuth.ts',
+            icon: 'i-vscode-icons-file-type-typescript'
+          },
+          {
+            label: 'useUser.ts',
+            icon: 'i-vscode-icons-file-type-typescript'
+          }
+        ]
+      },
+      {
+        label: 'components/',
+        defaultExpanded: true,
+        children: [
+          {
+            label: 'Card.vue',
+            icon: 'i-vscode-icons-file-type-vue'
+          },
+          {
+            label: 'Button.vue',
+            icon: 'i-vscode-icons-file-type-vue'
+          }
+        ]
+      }
+    ]
   },
-})
-
-const onSubmit = handleSubmit((data) => {
-  alert(JSON.stringify(data, null, 2));
-})
-
-const isTogglePassword = ref(true);
-const remember = ref(false);
+  {
+    label: 'app.vue',
+    icon: 'i-vscode-icons-file-type-vue'
+  },
+  {
+    label: 'nuxt.config.ts',
+    icon: 'i-vscode-icons-file-type-nuxt'
+  }
+])
 
 </script>
 
 <template>
-
-    <div>
-        <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
-            <div class="flex flex-col items-center text-center space-y-4">
-                <div id="logo" class="flex items-center flex-col">
-                    <h1 class="font-mono text-7xl font-bold text-gray-300">
-                        МОРИ
-                    </h1>
-                    <p class="mt-4 font-sans text-2xl/2 text-gray-400 opacity-0 sm:opacity-100
-                              transform transition-all duration-400">
-                        Машинное Обучение :
-                    </p>
-                    <p class="mt-2 font-sans text-2xl text-gray-400 opacity-0 sm:opacity-100
-                              transform transition-all duration-400">
-                        Разворачивание и Исследование
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <form id="authForm" @submit="onSubmit">
-        <div class="flex flex-col p-6 rounded-[6px] w-full absoulute -mt-45 sm:-mt-10
-                    bg-transparent md:w-170 lg:w-110 m-auto
-                    transform transition-all duration-400">
-            <UFieldGroup class="flex flex-col" :schema="formSchema" eager-validation>
-              <div class="flex flex-col w-full mt-2">
-                <VeeField v-slot="{ field, errorMessage }" name="login">
-                  <UFormField class="mb-3 md:text-[1rem] lg:text-[1rem]" label="логин" :error="errorMessage">
-                    <UInput
-                        id="login"
-                        v-bind="field"
-                        type="login"
-                        size="lg"
-                        placeholder="MyLogin" 
-                        class="w-full rounded-md"
-                        :aria-invalid="!!errorMessage"
-                        />
-                  </UFormField>
-                </VeeField>
-              </div>
-              <VeeField v-slot="{ field, errorMessage }" name="password">
-                <div class="flex flex-col w-full mt-2">
-                    <UFormField class="text-slate-300 mb-3 md:text-[1rem] lg:text-[1rem]" label="пароль" :error="errorMessage">
-                    <div class="flex flex-row rounded-[6px]">
-                        <UInput 
-                          id="password"
-                          v-bind="field"
-                          size="lg"
-                          :type="isTogglePassword ? 'password' : 'text'"
-                          :placeholder="isTogglePassword ? '••••••••' : 'password'"
-                          :aria-invalid="!!errorMessage"
-                          class="flex w-full h-full font-bold font-mono transform 
-                          transition-all duration-400 mr-auto"/>
-                    <UButton 
-                        @click = 'isTogglePassword = !isTogglePassword' 
-                        variant="outline" 
-                        size="lg"
-                        class="flex self-center rounded-l-none"
-                        :icon="isTogglePassword ? 'i-lucide-eye' : 'i-lucide-eye-off'"
-                        :color='errorMessage? "error" : "primary"'>
-                    </UButton>
-                    </div>
-                    </UFormField>
-                </div>
-              </VeeField>
-            </UFieldGroup>
-            <div class="flex flex-row justify-between w-full mt-4 space-x-4">
-                <div class="flex gap-2">
-                    <USwitch 
-                    v-model="remember" 
-                    id="rememberMe" 
-                    class="hover:cursor-pointer"/>
-                    <UFormField label="Запомнить меня"></UFormField>
-                </div>
-                
-            </div>
-            <UButton
-                color="primary"
-                variant="outline"
-                type="submit"
-                class="mt-10 justify-center h-10 rounded-[8px]" 
-                label="Войти">
-            </UButton>
-        </div>
-    </form>
+  <div class="flex container">
+    <h1 class="font-mono text-2xl">
+      /public
+    </h1>
+  </div>
+  <div class="flex container">
+    <UTree :items="items" />
+  </div>
 </template>

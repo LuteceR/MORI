@@ -12,3 +12,4 @@ ALTER TABLE IF EXISTS public.users
     OWNER to postgres;
 	
 INSERT INTO users(name, email, password) VALUES('kola', 'kola@kola.ko', '12345')
+INSERT INTO users(name, email, password) VALUES('lutece', 'lutece@gmail.com', '54321')

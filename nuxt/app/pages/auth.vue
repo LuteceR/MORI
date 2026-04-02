@@ -11,17 +11,6 @@ import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import { z } from 'zod';
 
-const colorMode = useColorMode()
-
-const isDark = computed({
-  get() {
-    return colorMode.value === 'dark'
-  },
-  set(_isDark) {
-    colorMode.preference = _isDark ? 'dark' : 'light'
-  }
-})
-
 const formSchema = z.object({
   login: z
     .string()
@@ -51,33 +40,27 @@ const remember = ref(false);
 </script>
 
 <template>
-    <ClientOnly v-if="!colorMode?.forced">
         <div>
             <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
                 <div class="flex flex-col items-center text-center space-y-4">
                     <div id="logo" class="flex items-center flex-col">
                         <h1 
-                        class="font-mono text-7xl font-bold transform transition-all duration-200"
-                        :class="isDark? 'text-gray-300' : 'text-gray-800'"
-                        >
+                        class="font-mono text-7xl font-bold dark:text-gray-300 text-gray-800 transform transition-all duration-200">
                             МОРИ
                         </h1>
                         <p 
-                        class="mt-4 font-sans text-2xl/2 opacity-0 sm:opacity-100
-                                transform transition-all duration-200"
-                        :class="isDark? 'text-gray-300' : 'text-gray-800'">
+                        class="mt-4 font-sans text-2xl/2 opacity-0 sm:opacity-100 dark:text-gray-300 text-gray-800
+                                transform transition-all duration-200">
                             Машинное Обучение :
                         </p>
-                        <p class="mt-2 font-sans text-2xl opacity-0 sm:opacity-100
-                                transform transition-all duration-200"
-                            :class="isDark? 'text-gray-300' : 'text-gray-800'">
+                        <p class="mt-2 font-sans text-2xl opacity-0 sm:opacity-100 dark:text-gray-300 text-gray-800
+                                transform transition-all duration-200">
                             Разворачивание и Исследование
                         </p>
                     </div>
                 </div>
             </div>
         </div>
-    </ClientOnly>
 
     <form id="authForm" @submit="onSubmit">
         <div class="flex flex-col p-6 rounded-md w-full absoulute -mt-45 sm:-mt-10

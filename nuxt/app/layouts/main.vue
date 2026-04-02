@@ -4,6 +4,7 @@ definePageMeta({
     name: "main",
   }
 })
+
 </script>
 
 <template>
