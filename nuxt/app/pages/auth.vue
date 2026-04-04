@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
+    middleware: "auth",
     layout: {
         name: 'main',
     }
@@ -8,18 +9,17 @@ definePageMeta({
 import { ref, onMounted, onUnmounted, h } from 'vue';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
-import { toast } from 'vue-sonner';
 import { z } from 'zod';
 
 const formSchema = z.object({
   login: z
     .string()
-    .min(5, 'login error length is less then 5')
-    .max(32, 'login error length is more then 32'),
+    .min(5, 'Длина пароля не может быть меньше 5')
+    .max(50, 'Длина пароля не может превышать 50'),
   password: z
     .string()
-    .min(20, 'pass error')
-    .max(100, 'pass error   2'),
+    .min(8, 'Пароль короче 8 символов')
+    .max(50, 'Пароль длиннее 50 символов'),
 })
 
 const { handleSubmit, errors } = useForm({
@@ -30,8 +30,37 @@ const { handleSubmit, errors } = useForm({
   },
 })
 
-const onSubmit = handleSubmit((data) => {
-  alert(JSON.stringify(data, null, 2));
+const toast = useToast();
+
+const onSubmit = handleSubmit(async (data) => {
+    data = Object.assign({}, data, {"rememberMe": remember.value});
+  
+    try {
+        const response =  await $fetch.raw("/api/logger", {
+            method: 'POST',
+            body: JSON.stringify(data),
+        })
+
+        if (response.status == 200) {
+            navigateTo('/')
+        }
+    } catch (err: any) {
+        if (err.response.status == 401) {
+            toast.add({
+                title: "Ошибка входа",
+                description: "Неправильный логин или пароль",
+                icon: 'i-lucide-log-in',
+            })
+        }
+    }
+
+    // if (res.status == 401) {
+    //     toast.add({
+    //         title: "Ошибка входа",
+    //         description: "Неправильный логин или пароль",
+    //         icon: 'i-lucide-log-in',
+    //     })
+    // }
 })
 
 const isTogglePassword = ref(true);

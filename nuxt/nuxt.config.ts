@@ -1,6 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui', 'nuxt-lucide-icons'],
+  
+  runtimeConfig: {
+    secretKey: process.env.SECRET_KEY || "secret_key"
+  },
 
   ssr: true,
 

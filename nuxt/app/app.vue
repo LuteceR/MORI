@@ -29,7 +29,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp :locale="ru">
+  <UApp>
     <UHeader>
       <template #left>
         <NuxtLink to="/">
