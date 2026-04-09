@@ -15,13 +15,14 @@ class ConfigBase(BaseSettings):
     bd_user: str
     bd_password: str
     secret_key: str
+    storage_full_path: str
 
 
 # Считываем конфиг из .env
 config = ConfigBase()
 
 SECRET_KEY = config.secret_key
-
+STORAGE_FULL_PATH = config.storage_full_path
 DATABASE_URL = f"postgresql+psycopg2://{config.bd_user}:{config.bd_password}@{config.bd_addr}:{config.bd_port}/{config.bd_name}"
 
 database = Database(DATABASE_URL)
