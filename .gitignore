@@ -1,9 +1,11 @@
-/backend/__pycache__
-
 # Local env files
 .env
 .env.*
 !.env.example
 
-
+backend/__pycache__
+backend/.venv
 backend/settings/.env
+backend/middlewares/__pycache__
+
+nuxt/pnpm-lock.yaml
