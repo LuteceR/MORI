@@ -4,13 +4,13 @@ from huggingface_hub import snapshot_download
 class ModelsFolder:
     local_dir_ = ""
 
-    def set_local_dir(local_dir: str):
+    def set_local_dir(self, local_dir: str):
         """
         установка local_dir - расположения .../MODELS
         """
-        ModelsFolder.local_dir_ = local_dir
+        ModelsFolder.local_dir_ = f"{local_dir}\\MODELS"
 
-    def download_model(repo_id: str):
+    def download_model(self, repo_id: str):
         """
         установка модели с Hugging face
         """
