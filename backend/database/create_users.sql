@@ -1,3 +1,6 @@
+/* 
+    Устарело 
+*/
 DROP TABLE IF EXISTS users
 CREATE TABLE public.users
 (

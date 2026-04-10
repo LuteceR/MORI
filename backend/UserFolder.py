@@ -3,7 +3,6 @@ import shutil
 
 
 from fastapi import FastAPI, HTTPException, status, Response
-from fastapi import HTTPException
 from models import users, projects
 from db import database, STORAGE_FULL_PATH
 from sqlalchemy import insert, update, delete
@@ -32,8 +31,8 @@ class UserFolder:
         if UserFolder.storage_full_path == "": return 0
         
         try:
-            Path(UserFolder.storage_full_path + f"/{self.name_}").mkdir(parents=True)
-            Path(UserFolder.storage_full_path + f"/{self.name_}/PROJECTS/").mkdir(parents=True)
+            Path(UserFolder.storage_full_path + f"/USERS/{self.name_}").mkdir(parents=True)
+            Path(UserFolder.storage_full_path + f"/USERS/{self.name_}/PROJECTS/").mkdir(parents=True)
             return 1
         except FileExistsError:
             return 0
