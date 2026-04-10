@@ -1,5 +1,3 @@
-import asyncio
-
 from fastapi import FastAPI, HTTPException, status, Response
 from fastapi.responses import FileResponse
 from fastapi import File, UploadFile
@@ -10,12 +8,12 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg2
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel
 
 from db import database, engine, STORAGE_FULL_PATH
 from models import users, metadata
 from schemas import UserCreate, userLogin
+from modelsFromHF import ModelsFolder, sync_models
 
 from middlewares.logger import create_access_token
 from UserStorageService import create_file_system_structure
@@ -33,12 +31,9 @@ class Token(BaseModel):
 metadata.create_all(engine)
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 create_file_system_structure(STORAGE_FULL_PATH)
-UserStorageService.storage_full_path = STORAGE_FULL_PATH
 
-async def check_user(username: str,
-                      password: str):
+async def check_user_pass(username: str, password: str):
     query = users.select().where(users.c.username == username)
-    
     existing_user = await database.fetch_one(query)
 
     if not existing_user:
@@ -53,6 +48,7 @@ async def check_user(username: str,
                 headers={"WWW-Authenticate": "Bearer"},
                 detail="Incorrect username or password",
             )
+
 
 @app.on_event("startup")
 async def startup():
@@ -82,8 +78,7 @@ async def registration(user: UserCreate):
 
 @app.post("/authorization")
 async def authorization(user: userLogin, response: Response):
-    
-    await check_user(user.username, user.password)
+    await check_user_pass(user.username, user.password)
     
     if user.rememberMe:
         access_token_expires = timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
@@ -107,7 +102,7 @@ async def project_initialization(username: str,
                                  password: str,
                                  project_name: str, 
                                  description: str):
-    await check_user(username, password)
+    await check_user_pass(username, password)
 
     user = UserStorageService(username)
     await user.create_project(project_name, description)
@@ -130,7 +125,7 @@ async def upload_project_file(username: str,
                               password: str,
                               project_name: str,
                               file: UploadFile):
-    await check_user(username, password)
+    await check_user_pass(username, password)
 
     user = UserStorageService(username)
 
@@ -147,7 +142,7 @@ async def edit_project_file(username: str,
                             filename: str,
                             newFile: UploadFile):
     
-    await check_user(username, password)
+    await check_user_pass(username, password)
     
     user = UserStorageService(username)
     await user.edit_file(project_name = project_name,
@@ -163,7 +158,7 @@ async def delete_project(username: str,
                          password: str,
                          project_name: str):
     
-    await check_user(username, password)
+    await check_user_pass(username, password)
     
     user = UserStorageService(username)
     await user.delete_project(project_name)
@@ -172,9 +167,34 @@ async def delete_project(username: str,
         "message": "Project is deleted successfully"
     }
 
-@app.post("/download-model-hf")
-async def download_model_hf(repo_id: str):
-
+@app.post("/model")
+async def download_model_hf(username: str, 
+                            password: str,
+                            repo_id: str):
+    await check_user_pass(username, password)
+    m = ModelsFolder(repo_id)
+    await m.create_model()
     return { 
         "message" : "Model is downloaded successfully" 
         }
+
+@app.delete("/model")
+async def delete_model(username: str, 
+                       password: str,
+                       model_name: str):
+    await check_user_pass(username, password)
+    m = ModelsFolder(model_name)
+    await m.delete_model()
+    return { 
+        "message" : "Model is deleted successfully" 
+        }
+
+
+@app.post("/model-sync")
+async def sync_m(username: str, password: str):
+    await check_user_pass(username, password)
+    await sync_models()
+    return { 
+        "message" : "Ended. result in console" 
+        }
+    
