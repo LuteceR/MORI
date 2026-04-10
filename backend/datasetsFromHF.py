@@ -50,12 +50,3 @@ class DatasetsFolder:
             shutil.rmtree(f"{self.local_dir_}/{repo_id}")
         except FileNotFoundError:
             raise
-
-data = DatasetsFolder()
-data.set_local_dir("C:\\Users\\lagge\\Desktop\\projects\\MORI\\backend\\folder")
-
-# test
-# data.download_dataset("Ujjwal-Tyagi/ai-ml-foundations-book-collection")
-# data.download_dataset("TeichAI/claude-4.5-opus-high-reasoning-250x")
-# data.download_dataset("TeichAI/gpt-5.2-high-reasoning-250x")
-
