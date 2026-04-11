@@ -69,8 +69,8 @@ class UserStorageService:
         if UserStorageService.storage_full_path == "": return 0
 
         try:
-            Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/{project_name}").mkdir(parents=True)
-            readme_path = Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/{project_name}/README.md")
+            Path(UserStorageService.storage_full_path + f"/{self.name_}/PROJECTS/{project_name}").mkdir(parents=True)
+            readme_path = Path(UserStorageService.storage_full_path + f"/{self.name_}/PROJECTS/{project_name}/README.md")
             readme_path.write_text(description, encoding="utf-8")
             query = users.select().where(users.c.username == self.name_)
             existing_user = await database.fetch_one(query)
@@ -178,6 +178,7 @@ class UserStorageService:
         except Exception as e: 
             raise e
         
+    # не работает
     async def get_project_info(self,
                                owner: str,
                                project_name: str):
@@ -188,6 +189,3 @@ class UserStorageService:
         """
         dirPath = f"{UserStorageService.storage_full_path}/USERS/{owner}/PROJECTS/{project_name}"
         list_files("C:")
-    
-user = UserStorageService("Lutece")
-asyncio.run(user.get_project_info("Lutece", "Lutece's project"))
