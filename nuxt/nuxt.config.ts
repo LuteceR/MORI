@@ -1,12 +1,28 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui', 'nuxt-lucide-icons'],
-  
-  runtimeConfig: {
-    secretKey: process.env.SECRET_KEY || "secret_key"
+
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@vee-validate/zod',
+        'vee-validate',
+        'zod',
+      ]
+    }
   },
 
   ssr: true,
+
+  devtools: {
+    enabled: true,
+
+    timeline: {
+      enabled: true
+    }
+  },
+
+  css: ['~/assets/css/main.css'],
 
   ui: {
     theme: {
@@ -18,20 +34,14 @@ export default defineNuxtConfig({
         'success',
         'error',
         'neutral',
-        'warning',
-      ],
-    },
-  },
-
-  devtools: {
-    enabled: true,
-
-    timeline: {
-      enabled: true
+        'warning'
+      ]
     }
   },
 
-  css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    secretKey: process.env.SECRET_KEY || 'secret_key'
+  },
 
   routeRules: {
     '/': { prerender: true }

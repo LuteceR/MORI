@@ -1,3 +1,4 @@
+import aiofiles
 from huggingface_hub import snapshot_download
 from huggingface_hub.utils import (
     RepositoryNotFoundError,
@@ -7,6 +8,7 @@ from huggingface_hub.utils import (
     HfHubHTTPError,
 )
 import shutil
+import os
 # модуль для установки с моделями с HuggingFace
 
 class DatasetsFolder:
@@ -50,3 +52,32 @@ class DatasetsFolder:
             shutil.rmtree(f"{self.local_dir_}/{repo_id}")
         except FileNotFoundError:
             raise
+
+    def build_tree(self, path: str):
+        tree = []
+
+        for item in os.listdir(path):
+            full_path = os.path.join(self.local_dir_, path, item)
+            
+            if os.path.isdir(full_path):
+                # tree[item] = self.build_tree(full_path)
+                tree.append({
+                    "label": item,
+                    "children": self.build_tree(full_path)
+                })
+            else:
+                tree.append({
+                    "label": item,
+                })
+        
+        return tree
+    
+    async def read_file(self, dataset: str, filepath: str):
+        """
+        чтение файла с локальным путём filepath из датасета.
+        dataset - глобальный путь к датасету
+        """
+
+        async with aiofiles.open(dataset + filepath, "r") as file:
+            content = await file.read()
+        return content

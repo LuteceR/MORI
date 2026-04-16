@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, status, Response
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import File, UploadFile
 
 import aiofiles
@@ -18,11 +19,27 @@ from modelsFromHF import ModelsFolder, sync_models
 from middlewares.logger import create_access_token
 from UserStorageService import create_file_system_structure
 from UserStorageService import UserStorageService
+from datasetsFromHF import DatasetsFolder
+
 
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 app = FastAPI()
+
+# настройка CORS политики
+origins = [
+    "http://192.168.0.104:3000",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class Token(BaseModel):
     access_token: str
@@ -197,4 +214,31 @@ async def sync_m(username: str, password: str):
     return { 
         "message" : "Ended. result in console" 
         }
+
+# datasetmaster/resumes
+@app.get("/dataset")
+async def get_info(dataset: str):
     
+    d = DatasetsFolder()
+    dataset = dataset.replace("/", "\\")
+    full_path = STORAGE_FULL_PATH + "\\DATASETS\\"
+
+    tree = d.build_tree(full_path + dataset)
+
+    return {
+        "dataset": dataset,
+        "tree": tree,
+    }
+
+@app.get("/file_from_dataset")
+async def get_info(dataset: str, filepath: str):
+
+    d = DatasetsFolder()
+    dataset = dataset.replace("/", "\\")
+    full_path = STORAGE_FULL_PATH + "\\DATASETS\\"
+
+    file_data = await d.read_file(full_path + dataset, filepath)    
+    
+    return {
+        "value": file_data
+    }

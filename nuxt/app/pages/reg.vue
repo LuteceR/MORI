@@ -1,15 +1,15 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted, h } from 'vue'
+import { toTypedSchema } from '@vee-validate/zod'
+import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate'
+import { toast } from 'vue-sonner'
+import { z } from 'zod'
+
 definePageMeta({
     layout: {
         name: 'main',
     }
 })
-
-import { ref, onMounted, onUnmounted, h } from 'vue';
-import { toTypedSchema } from '@vee-validate/zod';
-import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
-import { toast } from 'vue-sonner';
-import { z } from 'zod';
 
 const formSchema = z.object({
   login: z
@@ -22,7 +22,7 @@ const formSchema = z.object({
     .max(100, 'pass error   2'),
   email: z
     .string()
-    .min(5, "pochta dlenee))")
+    .min(5, 'pochta dlenee))')
 })
 
 const { handleSubmit, errors } = useForm({

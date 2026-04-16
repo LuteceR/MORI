@@ -1,15 +1,16 @@
 <script setup lang="ts">
-definePageMeta({
-    layout: {
-        name: 'main',
-    }
-})
+import { ref, onMounted, onUnmounted, h } from 'vue'
+import { toTypedSchema } from '@vee-validate/zod'
+import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate'
+import { toast } from 'vue-sonner'
+import type { collapsible } from '#build/ui'
+import type { TreeItem } from '@nuxt/ui'
 
-import { ref, onMounted, onUnmounted, h } from 'vue';
-import { toTypedSchema } from '@vee-validate/zod';
-import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
-import { toast } from 'vue-sonner';
-import type { collapsible } from '#build/ui';
+definePageMeta({
+  layout: {
+    name: 'main'
+  }
+})
 
 const items = ref<TreeItem[]>([
   {
@@ -54,7 +55,6 @@ const items = ref<TreeItem[]>([
     icon: 'i-vscode-icons-file-type-nuxt'
   }
 ])
-
 </script>
 
 <template>

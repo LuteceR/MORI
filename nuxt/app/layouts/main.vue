@@ -1,14 +1,13 @@
 <script setup lang="ts">
 definePageMeta({
   layout: {
-    name: "main",
+    name: 'main'
   }
 })
-
 </script>
 
 <template>
-    <main>
-      <slot />
-    </main>
+  <main>
+    <slot />
+  </main>
 </template>
