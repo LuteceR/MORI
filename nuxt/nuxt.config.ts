@@ -8,11 +8,12 @@ export default defineNuxtConfig({
         '@vee-validate/zod',
         'vee-validate',
         'zod',
+        'monaco-editor',
       ]
     }
   },
 
-  ssr: true,
+  ssr: false,
 
   devtools: {
     enabled: true,

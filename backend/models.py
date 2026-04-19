@@ -84,7 +84,7 @@ models_snapshots = Table(
     Column("id_models_snapshots", Integer, primary_key=True),
     Column("id_models", Integer, ForeignKey("models.id_models"), nullable=False),
     Column("id_metrics", Integer, ForeignKey("metrics.id_metrics"), nullable=False),
-    Column("params_path", String, nullable=False)
+    Column("folder_path", String, nullable=False)
 )
 
 datasets_snapshots = Table(

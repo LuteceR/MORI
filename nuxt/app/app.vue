@@ -16,6 +16,7 @@ useHead({
 
 const title = 'МОРИ'
 const description = 'МОРИ - Машинное Обучение : Разворачивание и Исследование.'
+const route = useRoute()
 
 useSeoMeta({
   title,
@@ -40,9 +41,12 @@ useSeoMeta({
         <UColorModeSelect />
       </template>
     </UHeader>
+    
+    <UMain>
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+    </UMain>
 
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
   </UApp>
 </template>

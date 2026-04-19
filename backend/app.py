@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 
 import psycopg2
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -66,6 +67,8 @@ async def check_user_pass(username: str, password: str):
                 detail="Incorrect username or password",
             )
 
+d = DatasetsFolder()
+d.set_local_dir(STORAGE_FULL_PATH)
 
 @app.on_event("startup")
 async def startup():
@@ -128,6 +131,8 @@ async def project_initialization(username: str,
         "message" : "Project is created successfully"
         }
 
+
+# not finished
 @app.get("/project")
 async def get_abstract_info(owner: str,
                             project_name: str):
@@ -219,25 +224,35 @@ async def sync_m(username: str, password: str):
 @app.get("/dataset")
 async def get_info(dataset: str):
     
-    d = DatasetsFolder()
-    dataset = dataset.replace("/", "\\")
-    full_path = STORAGE_FULL_PATH + "\\DATASETS\\"
+    if not "/" in dataset:
+        return HTTPException(
+                    status_code = status.HTTP_400_BAD_REQUEST, 
+                    detail = "Incorrect dataset repo id"
+                )
 
-    tree = d.build_tree(full_path + dataset)
+    dataset = dataset.replace("\\", "/").split("/")
+
+    dataset_path = d.local_dir_ / dataset[0] / dataset[1]
+
+    if not dataset_path.is_dir():
+        return HTTPException(
+                    status_code = status.HTTP_404_NOT_FOUND, 
+                    detail = "Dataset does not exists"
+                )
+    
+    tree = d.build_tree(Path(dataset[0]) / dataset[1])
 
     return {
-        "dataset": dataset,
+        "dataset": f"{dataset[0]}/{dataset[1]}",
         "tree": tree,
     }
 
 @app.get("/file_from_dataset")
 async def get_info(dataset: str, filepath: str):
 
-    d = DatasetsFolder()
-    dataset = dataset.replace("/", "\\")
-    full_path = STORAGE_FULL_PATH + "\\DATASETS\\"
+    dataset = dataset.replace("\\", "/")
 
-    file_data = await d.read_file(full_path + dataset, filepath)    
+    file_data = await d.read_file(dataset, filepath)    
     
     return {
         "value": file_data

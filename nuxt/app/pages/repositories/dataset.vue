@@ -1,50 +1,58 @@
 <script setup lang="ts">
-definePageMeta({
-    layout: {
-        name: 'main',
-    }
-})
 
 import { ref, onMounted, onUnmounted, h } from 'vue';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
 import { toast } from 'vue-sonner';
-import type { collapsible } from '#build/ui';
+import { editor, type collapsible } from '#build/ui';
 import type { ContextMenuItem, TreeItem } from '@nuxt/ui';
+import { CodeEditor } from 'monaco-editor-vue3';
 
 type DatasetResponse = {
     dataset: string,
     tree: TreeItem[]
 }
 
-const repo_id_header = ref("some");
-const repo_id = ref("some");
+const editorOptions = {
+  fontSize: 14,
+  minimap: { enabled: false },
+  automaticLayout: true
+};
 
+const repo_id_header = ref("Датасет");
+const repo_id = ref("");
+const openSidebar = ref(true);
+const loading = ref(false);
 const textarea_value = ref("");
-const items = ref<TreeItem[]>()
-
-// function processText(text: str) {
-
-// }
+const items = ref<TreeItem[]>();
 
 function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
     return tree.map((item) => {
 
         var currentPath = path
         ? `${path}`
-        : ""
+        : "";
         
         if (item.children) {
             return {
                 ...item,
-                children: processingTreeItems(item.children, currentPath += "\\\\" + item.label)
+                children: processingTreeItems(item.children, currentPath += item.label +  "/")
             }
         
         } else {
+            if (item.label?.endsWith("json") || item.label?.endsWith("jsonl")) {
+                item.icon = 'i-vscode-icons-file-type-json'
+            } else {
+                item.icon = 'i-lucide-file'
+            }
             return {
                 ...item,
                 onSelect: async() => {
                     try {
+
+                        if (currentPath) {
+                            currentPath += "/";
+                        }
 
                         const response = await $fetch.raw(
                             "http://localhost:8000/file_from_dataset",
@@ -52,15 +60,17 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                                 method: "GET",
                                 query: {
                                     dataset: repo_id.value,
-                                    filepath: currentPath + "\\"+ item.label,
+                                    filepath: currentPath + item.label,
                                 }
                             }
                         )
                         
-                        textarea_value.value = response._data?.value
-                        // console.log(response)
+                        // вывод текста в эдитор
+                        textarea_value.value = response._data?.value;
+
                     } catch(e) {
                         console.log(e)
+                        // console.log(currentPath + item.label)
                     }
                 }
             }
@@ -71,6 +81,8 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
 async function request() {
     if (repo_id.value == "") return
 
+    loading.value = true;
+    
     try {
         const response = await $fetch.raw<DatasetResponse>("http://localhost:8000/dataset", {
             method: 'GET',
@@ -79,17 +91,20 @@ async function request() {
             }
         })
 
-        repo_id_header.value = response._data?.dataset.replace("\\", "/") ?? "None"
+        repo_id_header.value = response._data?.dataset!;
         // tree.value = response._data?.tree ?? {}
-        items.value = response._data!.tree!
+        items.value = response._data!.tree
+        // console.log(response._data?.tree)
         // const uiTree = convertTree(response._data!.tree)
 
         // console.log(tree.value);
     } catch (e) {
         console.log(e);
+        loading.value = false;
     }
 
     items.value = processingTreeItems(items.value!)
+    loading.value = false;
 };
 
 const b = ref(false);
@@ -128,21 +143,78 @@ const contextMenuMarks = computed<ContextMenuItem[]>(() => [{
 </script>
 
 <template>
-    <div class="flex container mt-10">
-        <h1 class="font-mono text-2xl">
-            {{ repo_id_header }}
-        </h1>
-        <UTextarea class="ml-22" v-model="repo_id" 
-            :maxrows="1" 
-            :rows="1" 
-            placeholder="repo_id" 
-            autoresize
-            @change="request()" />
+  <div
+    class="flex flex-1">
+    <USidebar
+      v-model:open="openSidebar"
+      variant="inset"
+      collapsible="offcanvas"
+      side="left"
+      :ui="{
+          gap: 'h-[calc(100%-var(--ui-header-height))]',
+          container:
+            'absolute top-(--ui-header-height) bottom-0 h-[calc(100%-var(--ui-header-height))]'
+        }"
+    >
+        <template #header>
+            <UIcon name="i-lucide-database" class="size-6" />
+            <UUser v-if="!loading" :name="repo_id_header" size="xl" />
+            <USkeleton v-if="loading" class="h-6 w-45" />
+        </template>
+
+        <h1 class="">Файлы</h1>
+        <USeparator />
+
+        <UTree
+            :items="items"
+            orientation="vertical"
+            :ui="{ 
+                link: 'p-1.5 overflow-hidden',
+                listWithChildren: 'ml-3',
+            }"
+        />
+    </USidebar>
+
+    <div
+        class="flex-1 flex flex-col overflow-hidden h-[91vh]
+        lg:peer-data-[variant=floating]:my-4 peer-data-[variant=inset]:m-4 
+        lg:peer-data-[variant=inset]:not-peer-data-[collapsible=offcanvas]:ms-0 
+        peer-data-[variant=inset]:rounded-xl peer-data-[variant=inset]:shadow-sm 
+        peer-data-[variant=inset]:ring peer-data-[variant=inset]:ring-default bg-default"
+    >
+
+    
+    <UContainer
+    class="h-(--ui-header-height) shrink-0 flex items-center px-4 border-b border-default transform transition-all duration-200"
+    >
+    
+        <UButton
+        icon="i-lucide-panel-right"
+        color="neutral"
+        variant="ghost"
+        aria-label="Toggle sidebar"
+        @click="openSidebar = !openSidebar"
+        />
+        
+        <UInput
+            v-model="repo_id"
+            color="neutral" 
+            variant="subtle"
+            size="lg"
+            class="w-50 sm:ml-10 ml-2 transform transition-all duration-200"
+            placeholder="user/dataset"
+            @keydown.enter="request"
+        />
+        
+    </UContainer>
+
+    <CodeEditor
+        v-model:value="textarea_value"
+        language="javascript"
+        theme="vs-dark"
+        :options="editorOptions"
+    />
+    
     </div>
-    <div class="flex container">
-        <UTree :items="items" />
-    </div>
-    <div class="flex ">
-        <UContextMenu :items="contextMenuMarks"><span>Someword</span></UContextMenu>
-    </div>
+  </div>
 </template>

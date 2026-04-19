@@ -8,18 +8,18 @@ from huggingface_hub.utils import (
     HfHubHTTPError,
 )
 import shutil
-import os
+from pathlib import Path
 # модуль для установки с моделями с HuggingFace
 
 class DatasetsFolder:
-    local_dir_ = ""
+    local_dir_ = Path()
 
     def set_local_dir(self, local_dir: str):
         """
         установка директории для хранения датасетов \\
         Ожидаемо: STORAGE_FULL_PATH/DATASETS
         """
-        DatasetsFolder.local_dir_ = f"{local_dir}\\DATASETS"
+        DatasetsFolder.local_dir_ = Path(local_dir) / "DATASETS"
 
     def download_dataset(self, repo_id: str):
         """
@@ -53,23 +53,22 @@ class DatasetsFolder:
         except FileNotFoundError:
             raise
 
-    def build_tree(self, path: str):
+    def build_tree(self, path: Path):
         tree = []
+        path = self.local_dir_ / path
 
-        for item in os.listdir(path):
-            full_path = os.path.join(self.local_dir_, path, item)
-            
-            if os.path.isdir(full_path):
-                # tree[item] = self.build_tree(full_path)
+        for el in path.iterdir():
+            if el.is_file():
                 tree.append({
-                    "label": item,
-                    "children": self.build_tree(full_path)
+                    "label": el.name,
+                    "suffix": el.suffix
                 })
             else:
                 tree.append({
-                    "label": item,
+                    "label": el.name,
+                    "children": self.build_tree(el)
                 })
-        
+                
         return tree
     
     async def read_file(self, dataset: str, filepath: str):
@@ -77,7 +76,8 @@ class DatasetsFolder:
         чтение файла с локальным путём filepath из датасета.
         dataset - глобальный путь к датасету
         """
-
-        async with aiofiles.open(dataset + filepath, "r") as file:
+        path = self.local_dir_ / dataset / Path(filepath)
+        # path = path.join(Path(filepath))
+        async with aiofiles.open(path, "r") as file:
             content = await file.read()
         return content
