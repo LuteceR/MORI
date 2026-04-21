@@ -35,7 +35,7 @@ def list_files(startpath):
             print('{}{}'.format(subindent, f))
 
 class UserStorageService:
-    storage_full_path = f"{STORAGE_FULL_PATH}/USERS"
+    storage_full_path = f"{STORAGE_FULL_PATH}"
 
     def __init__(self, name: str):
         self.name_ = name
@@ -52,8 +52,8 @@ class UserStorageService:
         if UserStorageService.storage_full_path == "": return 0
         
         try:
-            Path(UserStorageService.storage_full_path + f"/{self.name_}").mkdir(parents=True)
-            Path(UserStorageService.storage_full_path + f"/{self.name_}/PROJECTS/").mkdir(parents=True)
+            Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}").mkdir(parents=True)
+            Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/").mkdir(parents=True)
         except FileExistsError as e:
             raise e
         
@@ -69,8 +69,8 @@ class UserStorageService:
         if UserStorageService.storage_full_path == "": return 0
 
         try:
-            Path(UserStorageService.storage_full_path + f"/{self.name_}/PROJECTS/{project_name}").mkdir(parents=True)
-            readme_path = Path(UserStorageService.storage_full_path + f"/{self.name_}/PROJECTS/{project_name}/README.md")
+            Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/{project_name}").mkdir(parents=True)
+            readme_path = Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/{project_name}/README.md")
             readme_path.write_text(description, encoding="utf-8")
             query = users.select().where(users.c.username == self.name_)
             existing_user = await database.fetch_one(query)

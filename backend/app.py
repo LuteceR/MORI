@@ -1,13 +1,11 @@
 from fastapi import FastAPI, HTTPException, status, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, Request
 
-import aiofiles
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 
-import psycopg2
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -15,7 +13,7 @@ from pydantic import BaseModel
 from db import database, engine, STORAGE_FULL_PATH
 from models import users, metadata
 from schemas import UserCreate, userLogin
-from modelsFromHF import ModelsFolder, sync_models
+from modelsFromHF import *
 
 from middlewares.logger import create_access_token
 from UserStorageService import create_file_system_structure
@@ -67,6 +65,22 @@ async def check_user_pass(username: str, password: str):
                 detail="Incorrect username or password",
             )
 
+
+async def auth_check(username: str, auth_token: str):
+    query = users.select().where(users.c.username == username)
+    user = await database.fetch_one(query)
+    if not user:
+        raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, 
+                detail="Wrong username!"
+            )
+    if create_access_token({"sub": user.username }) != auth_token:
+        raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                headers={"WWW-Authenticate": "Bearer"},
+                detail="Incorrect auth cookie",
+            )
+
 d = DatasetsFolder()
 d.set_local_dir(STORAGE_FULL_PATH)
 
@@ -105,8 +119,7 @@ async def authorization(user: userLogin, response: Response):
     else:
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    access_token = create_access_token(data = { "sub": user.username }, 
-                                       expires_delta = access_token_expires)
+    access_token = create_access_token({ "sub": user.username })
 
     response.set_cookie(
         key="auth",
@@ -116,13 +129,20 @@ async def authorization(user: userLogin, response: Response):
     )
 
     return { "message" : "Login successful" }
+    
 
+
+@app.get('/cookie')
+async def root(request: Request):
+    return request.cookies.get('auth')
+
+# create project
 @app.post("/project")
-async def project_initialization(username: str, 
-                                 password: str,
+async def project_initialization(request: Request, 
+                                 username: str, 
                                  project_name: str, 
                                  description: str):
-    await check_user_pass(username, password)
+    await auth_check(username, request.cookies.get('auth'))
 
     user = UserStorageService(username)
     await user.create_project(project_name, description)
@@ -143,11 +163,12 @@ async def get_abstract_info(owner: str,
     
 
 @app.patch("/project")
-async def upload_project_file(username: str,
-                              password: str,
+async def upload_project_file(request: Request, 
+                              username: str,
                               project_name: str,
                               file: UploadFile):
-    await check_user_pass(username, password)
+    
+    await auth_check(username, request.cookies.get('auth'))
 
     user = UserStorageService(username)
 
@@ -157,14 +178,15 @@ async def upload_project_file(username: str,
         "message": "Project's file was uploaded successfully"
     }
 
+
 @app.patch("/project-file")
-async def edit_project_file(username: str,
-                            password: str,
+async def edit_project_file(request: Request, 
+                            username: str, 
                             project_name: str,
                             filename: str,
                             newFile: UploadFile):
     
-    await check_user_pass(username, password)
+    await auth_check(username, request.cookies.get('auth'))
     
     user = UserStorageService(username)
     await user.edit_file(project_name = project_name,
@@ -175,12 +197,13 @@ async def edit_project_file(username: str,
         "message": "file changed successfully"
     }
 
+
 @app.delete("/project")
-async def delete_project(username: str, 
-                         password: str,
+async def delete_project(request: Request, 
+                         username: str,
                          project_name: str):
     
-    await check_user_pass(username, password)
+    await auth_check(username, request.cookies.get('auth'))
     
     user = UserStorageService(username)
     await user.delete_project(project_name)
@@ -190,21 +213,39 @@ async def delete_project(username: str,
     }
 
 @app.post("/model")
-async def download_model_hf(username: str, 
-                            password: str,
+async def download_model_hf(request: Request, 
+                            username: str,
                             repo_id: str):
-    await check_user_pass(username, password)
+    await auth_check(username, request.cookies.get('auth'))
     m = ModelsFolder(repo_id)
     await m.create_model()
     return { 
         "message" : "Model is downloaded successfully" 
         }
 
+
+@app.get("/model")
+async def get_model_information(request: Request, 
+                                username: str,
+                                model_name: str):
+    await auth_check(username, request.cookies.get('auth'))
+    mf = ModelsFolder(model_name)
+    return await mf.get_model_info()
+
+
+@app.get("/models")
+async def get_model_information(request: Request, 
+                                username: str):
+    await auth_check(username, request.cookies.get('auth'))
+    mf = ModelsFolder("")
+    return await mf.get_models()
+
+
 @app.delete("/model")
-async def delete_model(username: str, 
-                       password: str,
-                       model_name: str):
-    await check_user_pass(username, password)
+async def delete_model(request: Request, 
+                        username: str,
+                        model_name: str):
+    await auth_check(username, request.cookies.get('auth'))
     m = ModelsFolder(model_name)
     await m.delete_model()
     return { 
@@ -212,17 +253,13 @@ async def delete_model(username: str,
         }
 
 
-@app.post("/model-sync")
-async def sync_m(username: str, password: str):
-    await check_user_pass(username, password)
-    await sync_models()
-    return { 
-        "message" : "Ended. result in console" 
-        }
 
 # datasetmaster/resumes
 @app.get("/dataset")
-async def get_info(dataset: str):
+async def get_info(request: Request,
+                    username: str,
+                    dataset: str):
+    await auth_check(username, request.cookies.get('auth'))
     
     if not "/" in dataset:
         return HTTPException(
@@ -247,9 +284,14 @@ async def get_info(dataset: str):
         "tree": tree,
     }
 
-@app.get("/file_from_dataset")
-async def get_info(dataset: str, filepath: str):
 
+@app.get("/file_from_dataset")
+async def get_info(request: Request,
+                    username: str,
+                    dataset: str,
+                    filepath: str):
+
+    await auth_check(username, request.cookies.get('auth'))
     dataset = dataset.replace("\\", "/")
 
     file_data = await d.read_file(dataset, filepath)    

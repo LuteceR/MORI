@@ -7,7 +7,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
 
-text = "Я никому не ужин. Мир так желток."
+text = "Я в этом не вижу никакого смысла."
 results = classifier(text)
 print("Labels модели:", model.config.id2label)
 

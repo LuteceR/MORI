@@ -34,7 +34,13 @@ const { handleSubmit, errors } = useForm({
 })
 
 const onSubmit = handleSubmit((data) => {
-  alert(JSON.stringify(data, null, 2));
+    const payload = {
+        username: data.login,    // login → username
+        email: data.email,
+        password: data.password,
+        rememberMe: remember.value,
+    }
+  alert(JSON.stringify(payload, null, 2));
 })
 
 const isTogglePassword = ref(true);

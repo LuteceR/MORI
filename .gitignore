@@ -9,3 +9,4 @@ backend/settings/.env
 backend/middlewares/__pycache__
 
 nuxt/pnpm-lock.yaml
+.vscode

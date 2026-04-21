@@ -1,8 +1,6 @@
 from sqlalchemy import create_engine, MetaData, Table
 from databases import Database
 
-import psycopg2
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ConfigBase(BaseSettings):

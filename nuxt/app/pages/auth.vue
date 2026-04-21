@@ -33,11 +33,16 @@ const toast = useToast();
 
 const onSubmit = handleSubmit(async (data) => {
     data = Object.assign({}, data, {"rememberMe": remember.value});
+    const payload = {
+        username: data.login,
+        password: data.password,
+        rememberMe: remember.value,
+    }
   
     try {
-        const response =  await $fetch.raw("/api/logger", {
+        const response =  await $fetch.raw("http://127.0.0.1:8000/authorization", {
             method: 'POST',
-            body: JSON.stringify(data),
+            body: JSON.stringify(payload),
         })
 
         if (response.status == 200) {
