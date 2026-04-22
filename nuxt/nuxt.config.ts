@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui', 'nuxt-lucide-icons'],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxthq/ui', 'nuxt-lucide-icons'],
 
   vite: {
     optimizeDeps: {

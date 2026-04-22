@@ -78,6 +78,6 @@ class DatasetsFolder:
         """
         path = self.local_dir_ / dataset / Path(filepath)
         # path = path.join(Path(filepath))
-        async with aiofiles.open(path, "r") as file:
+        async with aiofiles.open(path, "r", encoding="utf-8") as file:
             content = await file.read()
         return content

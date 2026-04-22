@@ -40,9 +40,10 @@ const onSubmit = handleSubmit(async (data) => {
     }
   
     try {
-        const response =  await $fetch.raw("http://127.0.0.1:8000/authorization", {
+        const response = await $fetch.raw("http://localhost:8000/authorization", {
             method: 'POST',
             body: JSON.stringify(payload),
+            credentials: "include",
         })
 
         if (response.status == 200) {
@@ -57,14 +58,6 @@ const onSubmit = handleSubmit(async (data) => {
             })
         }
     }
-
-    // if (res.status == 401) {
-    //     toast.add({
-    //         title: "Ошибка входа",
-    //         description: "Неправильный логин или пароль",
-    //         icon: 'i-lucide-log-in',
-    //     })
-    // }
 })
 
 const isTogglePassword = ref(true);

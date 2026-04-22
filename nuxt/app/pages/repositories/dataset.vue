@@ -4,9 +4,12 @@ import { ref, onMounted, onUnmounted, h } from 'vue';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
 import { toast } from 'vue-sonner';
-import { editor, type collapsible } from '#build/ui';
+import { chatPromptSubmit, editor, type collapsible } from '#build/ui';
 import type { ContextMenuItem, TreeItem } from '@nuxt/ui';
 import { CodeEditor } from 'monaco-editor-vue3';
+import Papa from 'papaparse';
+import type { DropdownMenuItem } from '@nuxt/ui'
+import { object } from 'zod';
 
 type DatasetResponse = {
     dataset: string,
@@ -24,7 +27,35 @@ const repo_id = ref("");
 const openSidebar = ref(true);
 const loading = ref(false);
 const textarea_value = ref("");
+const table_content = ref({});
 const items = ref<TreeItem[]>();
+const items_data = ref<DropdownMenuItem[]>([]);
+const items_data_marks = ref<DropdownMenuItem[]>([]);
+const jsons_data_for_marks = ref([]);
+const arr_words = ref([]);
+const arr_marks = ref([]);
+const openCM = ref(false);
+
+function RightClick(event: MouseEvent) {
+    const el = event.target as HTMLElement;
+    el.style.background = "green";
+    openCM.value = true;
+    // console.log(el)
+}
+
+function processingWords(name: String) {
+    for (const item of jsons_data_for_marks.value) {
+        if (typeof item[name] == "string") {
+            arr_words.value.push(item[name]);
+        } else {
+            arr_words.value.push(Object.values(item[name]))
+        }
+    }
+}
+
+function processingMarks(name: String) {
+    console.log(name);
+}
 
 function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
     return tree.map((item) => {
@@ -67,6 +98,45 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                         
                         // вывод текста в эдитор
                         textarea_value.value = response._data?.value;
+                        arr_words.value = [];
+                        // получение разделов в json/jsonl
+                        try {
+                            jsons_data_for_marks.value = (response._data?.value ?? "")
+                                .trim()
+                                .split('\n')
+                                .map(line => JSON.parse(line));
+                            const keys = Object.keys(jsons_data_for_marks.value[0]); 
+                            items_data.value = keys.map(e => ({
+                                label: e,
+                                onSelect(event: Event) {
+                                    arr_words.value = []
+                                    processingWords(e)
+                                }
+                            }))
+
+                            items_data_marks.value = keys.map(e => ({
+                                label: e,
+                                onSelect(event: Event) {
+                                    processingMarks(e)
+                                }
+                            }))
+                            // console.log(items_data.value)
+                        } catch (e) {
+                            items_data.value = [{
+                                label : "Нет"
+                            }]
+                            return null;
+                        }
+
+                        // перевод в json
+                        if (item.label!.slice(-3) == "csv") {
+                            let data = Papa.parse(textarea_value.value, {
+                                    header: true,
+                                    delimiter: ',',
+                                })
+                            table_content.value = data.data
+                            console.log(data.data)
+                        }
 
                     } catch(e) {
                         console.log(e)
@@ -110,6 +180,27 @@ async function request() {
 const b = ref(false);
 const i = ref(false);
 const o = ref(false);
+
+const tabs = [
+    {
+        label: 'editor',
+        slot: 'editor',
+    },
+    {
+        label: "studio",
+        slot: "studio",
+    },
+    {
+        label: 'marks',
+        slot: 'marks',
+    },
+]
+
+const state = reactive({
+    editor: textarea_value,
+    studio: table_content,
+    marks: 'marks',
+})
 
 const contextMenuMarks = computed<ContextMenuItem[]>(() => [{
         label: "метки",
@@ -188,12 +279,13 @@ const contextMenuMarks = computed<ContextMenuItem[]>(() => [{
     class="h-(--ui-header-height) shrink-0 flex items-center px-4 border-b border-default transform transition-all duration-200"
     >
     
+    
         <UButton
-        icon="i-lucide-panel-right"
-        color="neutral"
-        variant="ghost"
-        aria-label="Toggle sidebar"
-        @click="openSidebar = !openSidebar"
+            icon="i-lucide-panel-right"
+            color="neutral"
+            variant="ghost"
+            aria-label="Toggle sidebar"
+            @click="openSidebar = !openSidebar"
         />
         
         <UInput
@@ -204,16 +296,94 @@ const contextMenuMarks = computed<ContextMenuItem[]>(() => [{
             class="w-50 sm:ml-10 ml-2 transform transition-all duration-200"
             placeholder="user/dataset"
             @keydown.enter="request"
-        />
-        
+            />
+            
     </UContainer>
+        
+        <UTabs 
+        :items="tabs" 
+        class="flex flex-1 h-full"
+        variant="link"
+        :ui="{
+            content: 'h-full'
+        }"
+        >
 
-    <CodeEditor
-        v-model:value="textarea_value"
-        language="javascript"
-        theme="vs-dark"
-        :options="editorOptions"
-    />
+            <template #editor>
+                <CodeEditor
+                v-model:value="state.editor"
+                language="javascript"
+                theme="vs-dark"
+                :options="editorOptions"
+                class="flex h-full"
+                />
+            </template>
+
+            <template #studio>
+                <UTable
+                :data="table_content"
+                class="flex h-full w-full"
+                :ui="{
+                    td: 'max-w-fit whitespace-normal break-words'
+                }"
+                />
+            </template>
+
+            <template #marks>
+                <div class="flex flex-row">
+                    <UDropdownMenu
+                    arrow
+                    :items="items_data"
+                    :ui="{
+                        content: 'w-4'
+                    }"
+                    >
+                        <UButton
+                        label="Данные" 
+                        icon="i-lucide-braces" 
+                        color="neutral" 
+                        variant="outline"
+                        class="flex ml-2" />
+                    </UDropdownMenu>
+
+                    <UDropdownMenu
+                    arrow
+                    :items="items_data_marks"
+                    :ui="{
+                        content: 'w-4'
+                    }"
+                    >
+                        <UButton
+                        label="Метки" 
+                        icon="i-lucide-braces" 
+                        color="neutral" 
+                        variant="outline"
+                        class="flex ml-2" />
+                    </UDropdownMenu>
+                </div>
+            <USeparator class="mt-2"/>
+            <p class="">
+                <UContextMenu :items="contextMenuMarks">
+                    <span class="text-green-500">sadsa</span>
+                </UContextMenu>
+            </p>
+                <div class="flex flex-wrap overflow-y-auto gap-6 p-3 h-full whitespace-normal break-words">
+                    <UContextMenu
+                        :items="contextMenuMarks"
+                        v-model:open="openCM"
+                    >
+                    <div>
+                        <p class="flex flex-wrap gap-1" v-for="text in arr_words">
+                            <span v-for="word in text"
+                            @contextmenu.capture="RightClick($event)">
+                            {{ word }}
+                        </span>
+                    </p>
+                    </div>
+                    </UContextMenu>
+                </div>
+            </template>
+        </Utabs>
     
     </div>
   </div>

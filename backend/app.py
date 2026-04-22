@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, status, Response
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import File, UploadFile, Request
 
@@ -20,7 +20,6 @@ from UserStorageService import create_file_system_structure
 from UserStorageService import UserStorageService
 from datasetsFromHF import DatasetsFolder
 
-
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
@@ -28,7 +27,6 @@ app = FastAPI()
 
 # настройка CORS политики
 origins = [
-    "http://192.168.0.104:3000",
     "http://localhost:3000",
 ]
 
@@ -124,7 +122,14 @@ async def authorization(user: userLogin, response: Response):
     response.set_cookie(
         key="auth",
         value=access_token,
-        httponly=True,
+        secure=True,
+        max_age=int(access_token_expires.total_seconds())
+    )
+
+    response.set_cookie(
+        key="username",
+        value=user.username,
+        secure=True,
         max_age=int(access_token_expires.total_seconds()),
     )
 
@@ -256,10 +261,8 @@ async def delete_model(request: Request,
 
 # datasetmaster/resumes
 @app.get("/dataset")
-async def get_info(request: Request,
-                    username: str,
-                    dataset: str):
-    await auth_check(username, request.cookies.get('auth'))
+async def get_info(dataset: str):
+    # await auth_check(username, request.cookies.get('auth'))
     
     if not "/" in dataset:
         return HTTPException(
@@ -268,6 +271,8 @@ async def get_info(request: Request,
                 )
 
     dataset = dataset.replace("\\", "/").split("/")
+
+    # d.download_dataset("fka/prompts.chat")
 
     dataset_path = d.local_dir_ / dataset[0] / dataset[1]
 
@@ -286,12 +291,10 @@ async def get_info(request: Request,
 
 
 @app.get("/file_from_dataset")
-async def get_info(request: Request,
-                    username: str,
-                    dataset: str,
-                    filepath: str):
+async def get_info(dataset: str,
+                   filepath: str):
 
-    await auth_check(username, request.cookies.get('auth'))
+    # await auth_check(username, request.cookies.get('auth'))
     dataset = dataset.replace("\\", "/")
 
     file_data = await d.read_file(dataset, filepath)    
