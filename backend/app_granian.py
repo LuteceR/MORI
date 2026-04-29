@@ -1,9 +1,7 @@
-import aiofiles
 from fastapi import FastAPI, HTTPException, status, Response
-from fastapi.responses import FileResponse, RedirectResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import File, UploadFile, Request
-from collections.abc import AsyncIterable
 
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
@@ -14,7 +12,7 @@ from pydantic import BaseModel
 
 from db import database, engine, STORAGE_FULL_PATH
 from models import users, metadata
-from schemas import UserCreate, userLogin, file
+from schemas import UserCreate, userLogin
 from modelsFromHF import *
 
 from middlewares.logger import create_access_token
@@ -91,10 +89,6 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
-
-@app.get("/")
-async def root():
-    return { "status" : "ok"}
 
 @app.post("/registration")
 async def registration(user: UserCreate):
@@ -303,28 +297,8 @@ async def get_info(dataset: str,
     # await auth_check(username, request.cookies.get('auth'))
     dataset = dataset.replace("\\", "/")
 
-    async def gen():
-        path = d.local_dir_ / dataset / Path(filepath)
-        try:
-            async with aiofiles.open(path, "r", encoding="utf-8") as file:
-                buffer = ""
-
-                async for line in file:
-                    buffer += line
-
-                    if len(buffer) > 2:
-                        # print(buffer + f"\n\n---------------{len(buffer)}---------------\n")
-                        yield buffer
-                        buffer = ""
-                        # await asyncio.sleep(0.2)
-                
-                if buffer:
-                    # print(buffer + f"\n\n---------------{len(buffer)}---------------\n")
-                    yield buffer
-                    # await asyncio.sleep(0.5)
-
-        except Exception as e:
-            print("ERROR IN STREAM: ", e)
-            raise
-    return StreamingResponse(gen(), 
-                             media_type="application/x-ndjson")
+    file_data = await d.read_file(dataset, filepath)    
+    
+    return {
+        "value": file_data
+    }

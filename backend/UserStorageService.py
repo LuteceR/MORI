@@ -178,7 +178,7 @@ class UserStorageService:
         except Exception as e: 
             raise e
         
-    # не работает
+    # не работает | нужно доработать
     async def get_project_info(self,
                                owner: str,
                                project_name: str):

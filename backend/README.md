@@ -10,7 +10,7 @@ pip install -r requirements.txt
 ### ЗАПУСК:
 ```fastapi dev``` - вкл. автоперезагрузка при изменении, подробные ошибки, запуск сервера с документацией (/docs)
 
-```uvicorn app:app --reload --log-level debug``` - для более детального вывода debug-инфы
+```granian --interface asgi app:app --http 2``` - для более детального вывода debug-инфы
 
 ```fastapi run``` - простой запуск
 

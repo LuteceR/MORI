@@ -8,3 +8,6 @@ class userLogin(BaseModel):
     username: str
     password: str
     rememberMe: bool = False
+
+class file(BaseModel):
+    value: str | None

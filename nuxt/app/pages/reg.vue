@@ -33,14 +33,32 @@ const { handleSubmit, errors } = useForm({
   },
 })
 
-const onSubmit = handleSubmit((data) => {
+const onSubmit = handleSubmit(async (data) => {
     const payload = {
-        username: data.login,    // login → username
-        email: data.email,
+        username: data.login,
         password: data.password,
         rememberMe: remember.value,
     }
-  alert(JSON.stringify(payload, null, 2));
+
+    try {
+        const response = await $fetch.raw("http://localhost:8000/registration", {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            credentials: "include",
+        })
+
+        if (response.status == 200) {
+            navigateTo('/')
+        }
+    } catch (err: any) {
+        if (err.response.status == 409) {
+            toast.add({
+                title: "Ошибка регистрации",
+                description: "Пользователь с таким именем уже существует!",
+                icon: 'i-lucide-log-in',
+            })
+        }
+    }
 })
 
 const isTogglePassword = ref(true);
@@ -49,7 +67,6 @@ const remember = ref(false);
 </script>
 
 <template>
-
         <div>
             <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
                 <div class="flex flex-col items-center text-center space-y-4">
