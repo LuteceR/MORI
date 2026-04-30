@@ -312,7 +312,7 @@ async def get_info(dataset: str,
                 async for line in file:
                     buffer += line
 
-                    if len(buffer) > 2:
+                    if len(buffer) > 256:
                         # print(buffer + f"\n\n---------------{len(buffer)}---------------\n")
                         yield buffer
                         buffer = ""

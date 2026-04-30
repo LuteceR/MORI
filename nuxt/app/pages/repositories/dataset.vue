@@ -38,6 +38,7 @@ const items_data_marks = ref<DropdownMenuItem[]>([{
 const textareaJsons = ref<string[]>([]);
 const arr_words = ref<string[]>([]);
 const arr_marks = ref<string[][]>([]);
+const current_arr_marks = ref<string[][]>([]);
 const openCM = ref(false);
 const pageNum = ref(1);
 const pageSize = 20;
@@ -76,12 +77,12 @@ const BColors = allColors.slice(0, allColors.length / 2)
 const IColors = allColors.slice(allColors.length / 2)
 
 const dictOfMarksAndBG = ref(new Map<string, string>());
-dictOfMarksAndBG.value.set("O", `bg-stone-500/50 rounded-sm`);
 dictOfMarksAndBG.value.set("B", `bg-sky-500/50 rounded-sm`);
 dictOfMarksAndBG.value.set("I", `bg-indigo-500/50 rounded-sm`);
+dictOfMarksAndBG.value.set("O", `bg-stone-500/50 rounded-sm`);
 
 const classMatrix = computed(() =>
-  arr_marks.value.map(row =>
+  current_arr_marks.value.map(row =>
     row.map(mark =>  dictOfMarksAndBG.value.get(mark) ?? '')
   )
 );
@@ -91,17 +92,19 @@ watch(tab, (newTab, oldTab) => {
     else {IsPaginator.value = false};
 })
 
-// подсчитывание строк для 1 странице
+// подсчитывание строк для одной странице
 const paginated = computed(() => {
     const start = (pageNum.value - 1) * pageSize
-    // console.log(pageNum.value);
+    // console.log(start, start + pageSize);
+    current_arr_marks.value = arr_marks.value.slice(start, start + pageSize);
+    // console.log(arr_marks.value.slice(start, start + pageSize))
     return arr_words.value?.slice(start, start + pageSize)
 })
 
 function RightClick(event: MouseEvent) {
     const el = event.target as HTMLElement;
-    const elMarks = arr_marks.value[el.dataset.i][el.dataset.k].split("-")
-    console.log(arr_marks.value[el.dataset.i][el.dataset.k].split("-"))
+    const elMarks = current_arr_marks.value[el.dataset.i][el.dataset.k].split("-")
+    console.log(current_arr_marks.value[el.dataset.i][el.dataset.k].split("-"))
     if (elMarks.length == 3) {
         value1.value = elMarks[0];
         value2.value = elMarks[1];
@@ -111,10 +114,10 @@ function RightClick(event: MouseEvent) {
         if (elMarks[1] in itemsSMC.value) {
             value1.value = elMarks[0];
             value2.value = elMarks[1];
-            value3.value = null;
+            value3.value = '';
         } else {
             value1.value = elMarks[0];
-            value2.value = null;
+            value2.value = '';
             value3.value = elMarks[1];
         }
     }
@@ -160,7 +163,7 @@ function retrievingMarks(nameMarks: String) {
 
     }
     
-    console.log(`unique: ${unique.length}`)
+    // console.log(`unique: ${unique.length}`)
     console.log(dictOfMarksAndBG.value);
     console.log(arr_marks);
 }
@@ -465,19 +468,17 @@ const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
     </USidebar>
 
     <div
-        class="flex-1 flex flex-col overflow-hidden h-[85vh] w-full
+        class="flex-1 flex flex-col overflow-hidden h-[88vh] w-full
         lg:peer-data-[variant=floating]:my-4 peer-data-[variant=inset]:m-4 
         lg:peer-data-[variant=inset]:not-peer-data-[collapsible=offcanvas]:ms-0 
         peer-data-[variant=inset]:rounded-xl peer-data-[variant=inset]:shadow-sm 
         peer-data-[variant=inset]:ring peer-data-[variant=inset]:ring-default"
     >
-
     
     <UContainer
-        class="w-full h-[calc(var(--ui-header-height)*1.1)] items-center 
+        class="w-full p-5 h-[calc(var(--ui-header-height)*1.2)]! items-center 
         max-w-none flex transform transition-all duration-200"
     >
-    
     
         <UButton
             icon="i-lucide-panel-right"
@@ -511,16 +512,16 @@ const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
     </UContainer>
         
         <UTabs
-        v-model:model-value="tab"
-        :items="tabs"
-        class="flex flex-1 h-full"
-        variant="link"
-        :ui="IsPaginator ? {
-            content: 'h-full',
-            list: 'border-none <- doesnt work :c'
-        } : { 
-            content: 'h-full',
-         }"
+            v-model:model-value="tab"
+            :items="tabs"
+            class="flex flex-1 h-full"
+            variant="link"
+            :ui="IsPaginator ? {
+                content: 'h-full',
+                list: 'border-none <- doesnt work :c'
+            } : { 
+                content: 'h-full',
+            }"
         >
 
             <template #editor>
@@ -577,9 +578,12 @@ const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
                     </UDropdownMenu>
                 </div>
             <USeparator class="mt-2"/>
-                <div class="flex flex-wrap overflow-y-auto gap-6 p-3 h-[90%] whitespace-normal break-words">
+                <div class="flex flex-wrap overflow-y-auto max-h-full gap-6 p-3 whitespace-normal break-words">
                     <UContextMenu
                         v-model:open="openCM"
+                        :ui="{
+                            content: 'rounded-lg ring ring-default shadow-lg'
+                        }"
                     >
                     <template #content-bottom>
                         <p class="self-center">Метки</p>
