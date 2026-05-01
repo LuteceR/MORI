@@ -129,7 +129,7 @@ class UserStorageService:
 
         Raises:
             status.HTTP_422_UNPROCESSABLE_CONTENT: папка и файл не могут иметь одно название
-            Exception: непредвиденная ошибка. Вероятно, связанная с провами доступа к директории
+            Exception: непредвиденная ошибка. Вероятно, связанная с правами доступа к директории
         """
         path = Path(self.storage_full_path) / "USERS" / self.name_ / "PROJECTS" / project_name / file.filename
 
@@ -155,7 +155,7 @@ class UserStorageService:
 
         Raises:
             status.HTTP_422_UNPROCESSABLE_CONTENT: папка и файл не могут иметь одно название
-            Exception: непредвиденная ошибка. Вероятно, связанная с провами доступа к директории
+            Exception: непредвиденная ошибка. Вероятно, связанная с правами доступа к директории
         """
         path = Path(self.storage_full_path) / "USERS" / self.name_ / "PROJECTS" / project_name / file_to_overwrite
 

@@ -48,6 +48,8 @@ let reader: ReadableStreamDefaultReader | null = null;
 const toast = useToast();
 const editorLanguage = ref('json');
 const openSidebarMarks = ref(false);
+const openedFile = ref('');
+const eventTarget = ref<HTMLElement | null>(null);
 
 const colors = [
     // B marks
@@ -101,10 +103,75 @@ const paginated = computed(() => {
     return arr_words.value?.slice(start, start + pageSize)
 })
 
-function RightClick(event: MouseEvent) {
-    const el = event.target as HTMLElement;
-    const elMarks = current_arr_marks.value[el.dataset.i][el.dataset.k].split("-")
-    console.log(current_arr_marks.value[el.dataset.i][el.dataset.k].split("-"))
+const saveChanges = async (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        
+        if (repo_id.value == "") {
+            toast.add({
+                    color: "error",
+                    title: "Не выбран датасет",
+                    icon: 'i-lucide-ban',
+                    ui: {
+                        description: 'whitespace-pre-line'
+                    }
+                })  
+            return;
+        }
+        if (openedFile.value == "") {
+            toast.add({
+                    color: "error",
+                    title: "Не выбран файл",
+                    icon: 'i-lucide-ban',
+                    ui: {
+                        description: 'whitespace-pre-line'
+                    }
+                })  
+            return;
+        }
+
+        await fetch(
+            "http://127.0.0.1:8000/save_file_changes", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                dataset: repo_id.value,
+                filename: openedFile.value,
+                content: textarea_value.value,
+            }),
+        }).then((response) => {
+            // console.log(response)
+            if (response.status != 200) {
+                toast.add({
+                    color: "error",
+                    title: "Произошла ошибка!",
+                    description: `Статус: ${response.status}\n${response.statusText}`,
+                    icon: 'i-lucide-ban',
+                    ui: {
+                        description: 'whitespace-pre-line'
+                    }
+                })        
+            }
+            if (response.status == 200) {
+                toast.add({
+                    color: "success",
+                    title: "Изменения сохранены!",
+                    icon: 'i-lucide-save',
+                })
+            }
+        });
+
+    }
+}
+
+// подгрузка тегов выбранного слова
+function RightClick(e : MouseEvent, i : number, k : number) {
+    eventTarget.value = e.target as HTMLElement;
+    const elMarks = arr_marks?.value?.[i]?.[k]?.split("-");
+    // console.log(current_arr_marks.value[el.dataset.i][el.dataset.k].split("-"))
+
     if (elMarks.length == 3) {
         value1.value = elMarks[0];
         value2.value = elMarks[1];
@@ -125,6 +192,42 @@ function RightClick(event: MouseEvent) {
         value1.value = elMarks[0];
         value2.value = null;
         value3.value = null;
+    }
+}
+
+// Добавление нового тега и замена старого в датасете
+function updateValue(event, array : string[]) {
+    // console.log((event.target as HTMLElement).value);
+    // console.log(eventTarget.value?.dataset.i);
+    const i = eventTarget.value?.dataset.i;
+    const k = eventTarget.value?.dataset.k;
+    console.log(arr_marks.value[i][k]);
+
+    const parts = arr_marks.value[i][k].split("-");
+
+    parts[0] = value1npVal.value || parts[0];
+    parts[1] = value2npVal.value || parts[1];
+    parts[2] = value3npVal.value || parts[2];
+
+    const set = new Set(arr_marks.value.flat());
+    const part = parts.filter(item => item !== undefined).join("-");
+
+    if ([...set].includes(part)) {
+        toast.add({
+            color: "error",
+            title: "Данная метка уже существует",
+            ui: {
+                description: 'whitespace-pre-line'
+            }
+        });
+        
+        return;
+    } else {
+        array.push((event.target as HTMLElement).value);
+        arr_marks.value[i][k] = part;
+        dictOfMarksAndBG.value.set(part, "bg-pink-300/50 rounded-sm")
+        // console.log(i, k);
+        // console.log(arr_marks.value);
     }
 }
 
@@ -160,12 +263,11 @@ function retrievingMarks(nameMarks: String) {
                 dictOfMarksAndBG.value.set(unique[i], `bg-${IColors[i]}/50 rounded-sm`);
             }
         }
-
     }
     
     // console.log(`unique: ${unique.length}`)
-    console.log(dictOfMarksAndBG.value);
-    console.log(arr_marks);
+    // console.log(dictOfMarksAndBG.value);
+    // console.log(arr_marks);
 }
 
 // преобразование текста json/jsonl, csv для получение доступных полей в датасете
@@ -275,11 +377,13 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
             return {
                 ...item,
                 onSelect: async() => {
+                    openedFile.value = item.label!;
+                    
                     if (reader) {
                         reader.cancel();
                         reader = null;
                     }
-                    
+
                     items_data.value = [{
                         label : "Нет"
                     }]
@@ -355,32 +459,42 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
     })
 }
 
+const RepoError = ref<string | null>(null);
+
 async function request() {
     if (repo_id.value == "") return
 
     loading.value = true;
     
     try {
-        const response = await $fetch.raw<DatasetResponse>("http://localhost:8000/dataset", {
+        const response = await $fetch<DatasetResponse>("http://localhost:8000/dataset", {
             method: 'GET',
             query:  {
                 dataset: repo_id.value
             }
         })
 
-        repo_id_header.value = response._data?.dataset!;
         // tree.value = response._data?.tree ?? {}
-        items.value = response._data!.tree;
-        // console.log(items.value);
+        if (response.dataset == undefined) {
+            RepoError.value = "Некорректное repo id";
+            loading.value = false;
+            console.log(response)
+            return;
+        }
+        RepoError.value = null;
         // console.log(response._data?.tree)
         // const uiTree = convertTree(response._data!.tree)
-
+        
+        repo_id_header.value = response.dataset!;
+        items.value = response.tree;
+        
         // console.log(tree.value);
     } catch (e) {
         console.log(e);
         loading.value = false;
+        return;
     }
-
+    
     // console.log(items.value);
     items.value = processingTreeItems(items.value!)
     loading.value = false;
@@ -423,11 +537,27 @@ const value1 = ref('');
 const value2 = ref('');
 const value3 = ref('');
 
+const value1npVal = ref('');
+const value2npVal = ref('');
+const value3npVal = ref('');
+
+const value1Input = ref(false);
+const value2Input = ref(false);
+const value3Input = ref(false);
+
 const itemsSMB = ref(['B', 'I', 'O'])
 const itemsSMC = ref(['LEFT', 'LEG','RIGHT'])
 const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
                       'GPE', 'DATE', 'MONEY', 'LAW',
                       'EVENT', 'PRODUCT', 'MISC'])
+
+onMounted(() => {
+    window.addEventListener('keydown', saveChanges);
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', saveChanges);
+})
 
 </script>
 
@@ -476,7 +606,7 @@ const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
     >
     
     <UContainer
-        class="w-full p-5 h-[calc(var(--ui-header-height)*1.2)]! items-center 
+        class="w-full p-5 h-[calc(var(--ui-header-height)*1.4)]! items-center 
         max-w-none flex transform transition-all duration-200"
     >
     
@@ -485,19 +615,24 @@ const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
             color="neutral"
             variant="ghost"
             aria-label="Toggle sidebar"
-            class="flex"
+            class="mb-auto flex"
             @click="openSidebar = !openSidebar"
         />
         
-        <UInput
-            v-model="repo_id"
-            color="neutral" 
-            variant="subtle"
-            size="lg"
-            class="w-50 sm:ml-10 ml-2 transform transition-all duration-200"
-            placeholder="user/dataset"
-            @keydown.enter="request"
-        />
+        <UFormField class=" sm:ml-10 mb-auto ml-2 self-center justify-center" :error="RepoError">
+            <div class="flex flex-row">
+                <UInput
+                    v-model="repo_id"
+                    color="neutral" 
+                    variant="subtle"
+                    size="lg"
+                    class="w-50 transform transition-all duration-200"
+                    placeholder="user/dataset"
+                    @keydown.enter="request"
+                />
+                <!-- <span v-if='RepoError' class="text-error ml-2 self-center text-md">{{ RepoError }}</span> -->
+            </div>
+        </UFormField>
         
         <UButton
             v-if="IsPaginator"
@@ -508,7 +643,17 @@ const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
             class="ml-6 flex"
             @click="openSidebarMarks = !openSidebarMarks"
         />
-            
+
+        <UButton
+            @click="saveChanges"
+            label="Сохранить"
+            color="success" 
+            variant="subtle"
+            :ui="{
+                base:'ml-auto'
+            }" 
+        />
+        <span class="ml-2 text-success/60">ctrl+s</span>
     </UContainer>
         
         <UTabs
@@ -576,36 +721,109 @@ const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
                             class="flex ml-2" 
                         />
                     </UDropdownMenu>
+
                 </div>
             <USeparator class="mt-2"/>
-                <div class="flex flex-wrap overflow-y-auto max-h-full gap-6 p-3 whitespace-normal break-words">
-                    <UContextMenu
-                        v-model:open="openCM"
-                        :ui="{
-                            content: 'rounded-lg ring ring-default shadow-lg'
-                        }"
-                    >
-                    <template #content-bottom>
-                        <p class="self-center">Метки</p>
-                        <div class="flex flex-row p-1 gap-2">
-                            <USelectMenu v-model="value1" :items="itemsSMB" @click.stop />
-                            <USelectMenu v-model="value2" class='w-25' :items="itemsSMC" @click.stop />
-                            <USelectMenu v-model="value3" class='w-25' :items="itemsSME" @click.stop />
-                        </div>
-                    </template>
+                <div class="flex flex-wrap overflow-y-auto max-h-full gap-6 p-3 whitespace-normal break-words"
+                >
+                <UContextMenu
+                    v-model:open="openCM"
+                    :ui="{
+                        content: 'rounded-lg ring ring-default shadow-lg'
+                    }"
+                    @update:open="value1Input = false; value2Input = false; value3Input = false"
+                >
+                        <template #content-bottom>
+                            <div @contextmenu.prevent>
+                                <p class="justify-center text-center pt-1">Метки</p>
+                                <div class="flex flex-row p-1 gap-2">
+                                    <UFieldGroup>
+                                        <USelectMenu
+                                            v-if="!value1Input"
+                                            v-model="value1"
+                                            color="primary" 
+                                            class="w-14"
+                                            :items="itemsSMB" 
+                                            @click.stop 
+                                        />
+                                        <UInput
+                                            color="success"
+                                            class="w-14"
+                                            v-model="value1npVal"
+                                            v-if="value1Input"
+                                            @keydown.enter="updateValue($event, itemsSMB)"
+                                        />
+                                        <UButton
+                                            @click="value1Input = !value1Input; value1npVal = ''"
+                                            color="success"
+                                            size="sm"
+                                            variant="subtle"
+                                            icon="i-lucide-plus"
+                                        />
+                                    </UFieldGroup>
+                                    <UFieldGroup>
+                                        <USelectMenu 
+                                            v-if="!value2Input"
+                                            v-model="value2" 
+                                            class='w-25' 
+                                            :items="itemsSMC" 
+                                            @click.stop 
+                                        />
+                                        <UInput
+                                            v-model="value2npVal"
+                                            color="success"
+                                            class="w-25"
+                                            v-if="value2Input"
+                                            @keydown.enter="updateValue($event, itemsSMC)" 
+                                        />
+                                        <UButton
+                                            @click="value2Input = !value2Input; value2npVal = ''"
+                                            color="success"
+                                            size="sm"
+                                            variant="subtle"
+                                            icon="i-lucide-plus"
+                                        />
+                                    </UFieldGroup>
+                                    <UFieldGroup>
+                                        <USelectMenu 
+                                            v-if="!value3Input"
+                                            v-model="value3" 
+                                            class='w-35' 
+                                            :items="itemsSME" 
+                                            @click.stop 
+                                        />
+                                        <UInput 
+                                            color="success"
+                                            class="w-35"
+                                            v-model="value3npVal"
+                                            v-if="value3Input"
+                                            @keydown.enter="updateValue($event, itemsSME)"
+                                            />
+                                            <UButton
+                                            @click="value3Input = !value3Input; value3npVal = ''"
+                                            color="success"
+                                            size="sm"
+                                            variant="subtle"
+                                            icon="i-lucide-plus"
+                                            />
+                                    </UFieldGroup>
+                                </div>
+                            </div>
+                        </template>
                     <div>
                         <p class="flex flex-wrap gap-2" v-for="(text, i) in paginated">
                             <span 
-                            v-for="(word, k) in text"
-                            :data-i="i"
-                            :data-k="k"
-                            :class="(classMatrix?.[i]?.[k] ?? '') + ' mt-1 pl-1 pr-1'"
-                            @contextmenu.capture="RightClick($event)">
+                                v-for="(word, k) in text"
+                                :data-i="i"
+                                :data-k="k"
+                                :class="(classMatrix?.[i]?.[k] ?? '') + ' mt-1 pl-1 pr-1'"
+                                @contextmenu.capture="RightClick($event, i, k)"
+                            >
                             {{ word }}
-                        </span>
+                            </span>
                         </p>
                     </div>
-                    </UContextMenu>
+                </UContextMenu>
                 </div>
             </template>
         </Utabs>

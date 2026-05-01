@@ -11,3 +11,8 @@ class userLogin(BaseModel):
 
 class file(BaseModel):
     value: str | None
+
+class SaveRequest(BaseModel):
+    dataset: str
+    filename: str
+    content: str

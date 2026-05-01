@@ -1,4 +1,5 @@
 import aiofiles
+from fastapi import FastAPI, HTTPException, status, Response
 from huggingface_hub import snapshot_download
 from huggingface_hub.utils import (
     RepositoryNotFoundError,
@@ -86,3 +87,29 @@ class DatasetsFolder:
                 if not line:
                     break
         return content
+    
+    async def save_file_changes(self,
+                                dataset: str,
+                                filename: str,
+                                content: str):
+        """
+        Сохранение изменений в файле
+
+        Raises:
+            status.HTTP_422_UNPROCESSABLE_CONTENT: файла не существует
+            Exception: непредвиденная ошибка. Вероятно, связанная с правами доступа к директории
+        """
+        path = Path(self.local_dir_) / dataset / filename
+
+        if not path.is_file(): 
+            return HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="file does not exist"
+            ) 
+
+        try:
+            async with aiofiles.open(path, "wb") as out:
+                await out.write(content.encode())
+        
+        except Exception as e: 
+            raise e

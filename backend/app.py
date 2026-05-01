@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from db import database, engine, STORAGE_FULL_PATH
 from models import users, metadata
-from schemas import UserCreate, userLogin, file
+from schemas import SaveRequest, UserCreate, userLogin, file
 from modelsFromHF import *
 
 from middlewares.logger import create_access_token
@@ -277,6 +277,12 @@ async def get_info(dataset: str):
                 )
 
     dataset = dataset.replace("\\", "/").split("/")
+    
+    if (len(dataset) != 2):
+        return HTTPException(
+                    status_code = status.HTTP_404_NOT_FOUND, 
+                    detail = "Dataset does not exists"
+                )
 
     # d.download_dataset("fka/prompts.chat")
 
@@ -328,3 +334,12 @@ async def get_info(dataset: str,
             raise
     return StreamingResponse(gen(), 
                              media_type="application/x-ndjson")
+
+@app.post("/save_file_changes")
+async def save_file_changes(data: SaveRequest):
+    
+    await d.save_file_changes(data.dataset, data.filename, data.content)
+
+    return { 
+        "status" : "success"
+        }
