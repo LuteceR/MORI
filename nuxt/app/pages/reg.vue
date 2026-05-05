@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted, h } from 'vue'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate'
-import { toast } from 'vue-sonner'
 import { z } from 'zod'
 
 definePageMeta({
@@ -14,15 +13,17 @@ definePageMeta({
 const formSchema = z.object({
   login: z
     .string()
-    .min(5, 'login error length is less then 5')
-    .max(32, 'login error length is more then 32'),
+    .min(5, 'Длина логина не может быть меньше 5')
+    .max(50, 'Длина логина не может превышать 50'),
   password: z
     .string()
-    .min(20, 'pass error')
-    .max(100, 'pass error   2'),
-  email: z
+    .min(8, 'Длина пароля не может быть меньше 8')
+    .max(50, 'Длина пароля не может превышать 50'),
+  confirmPassword: z
     .string()
-    .min(5, 'pochta dlenee))')
+  }).refine((data) => data.password === data.confirmPassword, {
+  message: 'Пароли не совпадают',
+  path: ['confirmPassword'] // указывает на конкретное поле ошибки
 })
 
 const { handleSubmit, errors } = useForm({
@@ -30,12 +31,15 @@ const { handleSubmit, errors } = useForm({
   initialValues: {
     login: '',
     password: '',
+    confirmPassword: '',
   },
 })
 
+const toast = useToast();
+
 const onSubmit = handleSubmit(async (data) => {
     const payload = {
-        username: data.login,
+        username: data.login,    // login → username
         password: data.password,
         rememberMe: remember.value,
     }
@@ -104,7 +108,7 @@ const remember = ref(false);
                     <UInput
                         id="login"
                         v-bind="field"
-                        type="login"
+                        type="text"
                         size="lg"
                         placeholder="MyLogin" 
                         class="flex rounded-[6px]"
@@ -121,32 +125,6 @@ const remember = ref(false);
                 </VeeField>
               </div>
 
-              <div class="flex flex-col w-full mt-2">
-                <VeeField v-slot="{ field, errorMessage }" name="email">
-                  <UFormField 
-                  class="mb-3 md:text-[1rem] lg:text-[1rem]" 
-                  label="почта" 
-                  :error="errorMessage"
-                  required>
-                    <UInput
-                        id="email"
-                        v-bind="field"
-                        type="email"
-                        size="lg"
-                        placeholder="Awesome@some.com" 
-                        class="flex rounded-[6px]"
-                        autocomplete="off"
-                        trailing-icon="i-lucide-at-sign"
-                        :aria-invalid="!!errorMessage"
-                        :ui="{
-                            base: [
-                                'rounded-md!'
-                            ]
-                        }"
-                        />
-                  </UFormField>
-                </VeeField>
-              </div>
 
               <VeeField v-slot="{ field, errorMessage }" name="password">
                 <div class="flex flex-col w-full mt-2">
@@ -160,7 +138,8 @@ const remember = ref(false);
                           :placeholder="isTogglePassword ? '••••••••' : 'password'"
                           :aria-invalid="!!errorMessage"
                           class="flex font-bold font-mono w-full
-                          rounded-r-none rounded-[6px]"/>
+                          rounded-r-none rounded-[6px]"
+                          autocomplete="off"/>
                     <UButton 
                         @click = 'isTogglePassword = !isTogglePassword' 
                         variant="outline" 
@@ -173,6 +152,24 @@ const remember = ref(false);
                     </UFormField>
                 </div>
               </VeeField>
+              <VeeField v-slot="{ field, errorMessage }" name="confirmPassword">
+                <div class="flex flex-col w-full mt-2">
+                <UFormField class="text-slate-300 mb-3 md:text-[1rem] lg:text-[1rem]" label="повтор пароля" :error="errorMessage" required>
+                    <div class="flex flex-row rounded-[6px]">
+                    <UInput 
+                        id="confirmPassword"
+                        v-bind="field"
+                        size="lg"
+                        :type="isTogglePassword ? 'password' : 'text'"
+                        :placeholder="isTogglePassword ? '••••••••' : 'password'"
+                        :aria-invalid="!!errorMessage"
+                        class="flex font-bold font-mono w-full
+                        rounded-r-none rounded-[6px]"
+                        autocomplete="off"/>
+                    </div>
+                </UFormField>
+                </div>
+            </VeeField>
             </UFieldGroup>
             <div class="flex flex-row justify-between w-full mt-4 space-x-4">
                 <div class="flex gap-2">

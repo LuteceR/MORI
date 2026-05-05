@@ -1,10 +1,10 @@
 from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
 
 # Автоматическая загрузка с safetensors
-model_name = "./userdata/multilingual-sentiment-analysis"
+model_path = "F:/mori/backend/userdata/MODELS/seara/rubert-tiny2-russian-sentiment"
 # model_name = "tabularisai/multilingual-sentiment-analysis"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_path)
+model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=True)
 classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
 
 text = "Я в этом не вижу никакого смысла."

@@ -9,6 +9,10 @@ class userLogin(BaseModel):
     password: str
     rememberMe: bool = False
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 class file(BaseModel):
     value: str | None
 

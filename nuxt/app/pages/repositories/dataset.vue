@@ -131,11 +131,12 @@ const saveChanges = async (e) => {
         }
 
         await fetch(
-            "http://127.0.0.1:8000/save_file_changes", {
+            "http://localhost:8000/save_file_changes", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify({
                 dataset: repo_id.value,
                 filename: openedFile.value,
@@ -425,7 +426,10 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                             {
                                 dataset: repo_id.value,
                                 filepath: currentPath + item.label,
-                            })
+                            }),
+                            {
+                                credentials: "include"
+                            }
                         ).then((response) => {
                             reader = response.body!.getReader();
                             const decoder = new TextDecoder();
@@ -469,6 +473,7 @@ async function request() {
     try {
         const response = await $fetch<DatasetResponse>("http://localhost:8000/dataset", {
             method: 'GET',
+            credentials: "include",
             query:  {
                 dataset: repo_id.value
             }

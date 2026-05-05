@@ -7,21 +7,25 @@ pip install -r requirements.txt
 ```
 
 
-### ЗАПУСК:
+### ЗАПУСК
 ```fastapi dev``` - вкл. автоперезагрузка при изменении, подробные ошибки, запуск сервера с документацией (/docs)
 
-```granian --interface asgi app:app --http 2``` - для более детального вывода debug-инфы
+```granian --interface asgi app:app``` - альтернативный вариант
 
 ```fastapi run``` - простой запуск
-
-### ЗАПУСК с поддержкой HTTP/2:
-hypercorn main:app
 
 Для получения секретного ключа (выполнить в git):\
 ```openssl rand -hex 32```
 
 или для windows (в PowerShell):\
 ```(1..32 | %{ [byte](Get-Random -Max 256) } | ForEach { '{0:x2}' -f $_ }) -join ''```
+
+### ЗАПУСК с granian
+```
+pip install granian
+granian --interface asgi app_granian:app --access-log
+```
+access-log для вывода входящих запросов
 
 ### Сайт доступен локально по адресу:
 

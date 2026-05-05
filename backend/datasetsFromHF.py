@@ -8,21 +8,30 @@ from huggingface_hub.utils import (
     LocalEntryNotFoundError,
     HfHubHTTPError,
 )
+from fastapi import HTTPException, status
+import asyncio
+
 import shutil
 from pathlib import Path
-# модуль для установки с моделями с HuggingFace
+
+from db import database, STORAGE_FULL_PATH
+from models import datasets
 
 class DatasetsFolder:
-    local_dir_ = Path()
+    """
+    Модуль для работы с датасетами с HuggingFace
+    """
+    local_dir_ = Path(STORAGE_FULL_PATH) / Path("DATASETS")
 
-    def set_local_dir(self, local_dir: str):
+    @staticmethod
+    async def get_datasets():
         """
-        установка директории для хранения датасетов \\
-        Ожидаемо: STORAGE_FULL_PATH/DATASETS
+        Возвращает все датасеты в БД
         """
-        DatasetsFolder.local_dir_ = Path(local_dir) / "DATASETS"
+        return await database.fetch_all(datasets.select())
+    
 
-    def download_dataset(self, repo_id: str):
+    async def download_dataset(self, repo_id: str):
         """
         установка датасета с Hugging face
 
@@ -34,27 +43,52 @@ class DatasetsFolder:
             HfHubHTTPError: ошибка HTTP
             Exception: неизвестная ошибка
         """
+        query = datasets.select().where(datasets.c.name == repo_id)
+        existing_dataset = await database.fetch_one(query)
+
+        if existing_dataset:
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
+                                    detail = f"Dataset {repo_id} already exist!")
+
         try:
-            snapshot_download(repo_id=repo_id,
+            await asyncio.to_thread(snapshot_download(repo_id=repo_id,
                             repo_type="dataset",
-                            local_dir=f"{DatasetsFolder.local_dir_}/{repo_id}")
-        except Exception:
-            raise
+                            local_dir=f"{DatasetsFolder.local_dir_}/{repo_id}"))
+        except(RepositoryNotFoundError):
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                                    detail = f"Repository {repo_id} does not exist!")
+        except(LocalEntryNotFoundError):
+            raise HTTPException(status_code = status.HTTP_406_NOT_ACCEPTABLE, 
+                        detail = "Can't connect to repository!")
+
+        query = datasets.insert().values(name=repo_id, url_source=f"https://huggingface.co/datasets/{repo_id}",
+                                folder_path=str(self.local_dir_ / repo_id))
+        await database.execute(query)
 
 
-    def delete_dataset(self, repo_id: str):
+    async def delete_dataset(self, repo_id: str):
         """
         удаление датасета с Hugging face
 
         Raises:
             FileNotFoundError: датасет не был найден
         """
+        query = datasets.select().where(datasets.c.name == repo_id)
+        existing_dataset = await database.fetch_one(query)
+        if existing_dataset is None:
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                                    detail = f"Dataset {repo_id} does not exist!")
+
         try:
             shutil.rmtree(f"{self.local_dir_}/{repo_id}")
-        except FileNotFoundError:
-            raise
+        except(OSError):
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
+                detail = f"Dataset {repo_id} is currently in use!")
+    
+        query = datasets.delete().where(datasets.c.id_datasets == existing_dataset.id_datasets)
+        await database.execute(query)
 
-    def build_tree(self, path: Path):
+    async def build_tree(self, path: Path):
         tree = []
         path = self.local_dir_ / path
 
@@ -80,12 +114,16 @@ class DatasetsFolder:
         path = self.local_dir_ / dataset / Path(filepath)
         # path = path.join(Path(filepath))
         content = []
-        async with aiofiles.open(path, "r", encoding="utf-8") as file:
-            while True:
-                line = await file.readline()
-                content.append(line)
-                if not line:
-                    break
+        try:
+            async with aiofiles.open(path, "r", encoding="utf-8") as file:
+                while True:
+                    line = await file.readline()
+                    content.append(line)
+                    if not line:
+                        break
+        except FileNotFoundError:
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                                    detail = f"File {filepath} does not exist!")
         return content
     
     async def save_file_changes(self,
@@ -102,7 +140,7 @@ class DatasetsFolder:
         path = Path(self.local_dir_) / dataset / filename
 
         if not path.is_file(): 
-            return HTTPException(
+            raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
                 detail="file does not exist"
             ) 

@@ -32,7 +32,6 @@ const { handleSubmit, errors } = useForm({
 const toast = useToast();
 
 const onSubmit = handleSubmit(async (data) => {
-    data = Object.assign({}, data, {"rememberMe": remember.value});
     const payload = {
         username: data.login,
         password: data.password,

@@ -1,14 +1,19 @@
 from huggingface_hub import snapshot_download
-
 from huggingface_hub.errors import RepositoryNotFoundError, LocalEntryNotFoundError
+from transformers import pipeline, AutoModelForTokenClassification, AutoTokenizer
 from fastapi import FastAPI, HTTPException, status, Response
 from db import database, STORAGE_FULL_PATH
 from sqlalchemy import select
-from models import models
 import asyncio
 import shutil
 from pathlib import Path
 import json
+import threading
+import time
+from tqdm.auto import tqdm
+
+from models import models, datasets
+from datasetsFromHF import DatasetsFolder
 
 class ModelsFolder:
     """
@@ -79,6 +84,9 @@ class ModelsFolder:
 
     @staticmethod
     async def get_models():
+        """
+        Возвращает все модели в БД
+        """
         return await database.fetch_all(models.select())
 
     
@@ -99,19 +107,19 @@ class ModelsFolder:
         if existing_model:
             raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
                                     detail = f"Model {self.model_name} already exist!")
-        
+        print(f"downloading model: {self.model_name}")
         try:
-            # т.к. snapshot_download не асинхронный
             await asyncio.to_thread(snapshot_download, self.model_name, local_dir=f"{self.full_path}")
         except(RepositoryNotFoundError):
             raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
                                     detail = f"Repository {self.model_name} does not exist!")
+
         except(LocalEntryNotFoundError):
             raise HTTPException(status_code = status.HTTP_406_NOT_ACCEPTABLE, 
                         detail = "Can't connect to repository!")
     
 
-        query = models.insert().values(name=self.model_name, folder_path=self.full_path,
+        query = models.insert().values(name=self.model_name, folder_path=str(self.full_path),
                                         id_original_model=orig_model_id)
         await database.execute(query)
 
@@ -182,5 +190,64 @@ class ModelsFolder:
             except OSError:
                 raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
                         detail = f"Config file not found!")
+    
+    async def run_model(self, dataset_repo: str, filepath: str, text_key: str):
+        """
+        Запускает модели на данных, 
+        dataset_repo - датасет
+        filepath - путь до файла .jsonl с данными
+        text_key - ключ в файле, содержащий текст
+        
+        Raises:
+            HTTPException:
+                * HTTP_409_CONFLICT ошибка чтения файла датасета
+                * HTTP_400_BAD_REQUEST модели/датасета не существует
+        """
+        query = models.select().where(models.c.name == self.model_name)
+        db_model = await database.fetch_one(query)
+        if db_model is None:
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                                    detail = f"Model {self.model_name} does not exist!")
+        
+        query = datasets.select().where(datasets.c.name == dataset_repo)
+        db_dataset = await database.fetch_one(query)
+        if db_dataset is None:
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                                    detail = f"Dataset {dataset_repo} does not exist!")
+                    
+            
+
+        model_path = self.local_dir_ / self.model_name
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = AutoModelForTokenClassification.from_pretrained(model_path)
+        nlp = pipeline("token-classification", model=model, tokenizer=tokenizer, ignore_labels=[]) # ignore_labels - не выдавать в результате слова с этими метками
+
+        dataset = DatasetsFolder()
+        json_data = await dataset.read_file(dataset_repo, filepath)
+        data = []
+        try:
+            for line in json_data:
+                if line != "":
+                    data.append(json.loads(line)[text_key])
+        except Exception as e:
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
+                        detail = f"Exception occured when reading file: {e}")
+        
+        result = []
+        for line in data:
+            line = " ".join(line)
+            results = nlp(line)
+            
+            words = [word['word'] for word in results]
+            ner = [word['entity'] for word in results]
+            scores = [float(word['score']) for word in results]
+            result_line = {
+                'words': words,
+                'ner': ner,
+                'scores': scores
+            }
+            result.append(result_line)
+
+        return {'result': result}
 
 

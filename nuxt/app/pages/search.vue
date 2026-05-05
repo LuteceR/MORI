@@ -58,6 +58,7 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                             "http://localhost:8000/file_from_dataset",
                             {
                                 method: "GET",
+                                credentials: "include",
                                 query: {
                                     dataset: repo_id.value,
                                     filepath: currentPath + item.label,
@@ -86,6 +87,7 @@ async function request() {
     try {
         const response = await $fetch.raw<DatasetResponse>("http://localhost:8000/dataset", {
             method: 'GET',
+            credentials: "include",
             query:  {
                 dataset: repo_id.value
             }
