@@ -51,6 +51,8 @@ const openSidebarMarks = ref(false);
 const openedFile = ref('');
 const eventTarget = ref<HTMLElement | null>(null);
 
+const choosenKeyForMarks = ref('');
+
 const colors = [
     // B marks
     ["red", "orange", "amber", 
@@ -62,7 +64,6 @@ const colors = [
     "fuchsia", "pink", "rose",
     "slate", "olive", "mist", 
     "mauve", "zinc"]
-
 ]
 
 const colorDepths = [
@@ -79,13 +80,13 @@ const BColors = allColors.slice(0, allColors.length / 2)
 const IColors = allColors.slice(allColors.length / 2)
 
 const dictOfMarksAndBG = ref(new Map<string, string>());
-dictOfMarksAndBG.value.set("B", `bg-sky-500/50 rounded-sm`);
-dictOfMarksAndBG.value.set("I", `bg-indigo-500/50 rounded-sm`);
-dictOfMarksAndBG.value.set("O", `bg-stone-500/50 rounded-sm`);
+dictOfMarksAndBG.value.set('B', `bg-sky-500/50 rounded-sm`);
+dictOfMarksAndBG.value.set('I', `bg-indigo-500/50 rounded-sm`);
+dictOfMarksAndBG.value.set('O', `bg-stone-500/50 rounded-sm`);
 
 const classMatrix = computed(() =>
   current_arr_marks.value.map(row =>
-    row.map(mark =>  dictOfMarksAndBG.value.get(mark) ?? '')
+    row.map(mark => dictOfMarksAndBG.value.get(mark) ?? '')
   )
 );
 
@@ -94,13 +95,15 @@ watch(tab, (newTab, oldTab) => {
     else {IsPaginator.value = false};
 })
 
+const start = ref<number>(0);
+
 // подсчитывание строк для одной странице
 const paginated = computed(() => {
-    const start = (pageNum.value - 1) * pageSize
+    start.value = (pageNum.value - 1) * pageSize
     // console.log(start, start + pageSize);
-    current_arr_marks.value = arr_marks.value.slice(start, start + pageSize);
+    current_arr_marks.value = arr_marks.value.slice(start.value, start.value + pageSize);
     // console.log(arr_marks.value.slice(start, start + pageSize))
-    return arr_words.value?.slice(start, start + pageSize)
+    return arr_words.value?.slice(start.value, start.value + pageSize)
 })
 
 const saveChanges = async (e) => {
@@ -170,7 +173,7 @@ const saveChanges = async (e) => {
 // подгрузка тегов выбранного слова
 function RightClick(e : MouseEvent, i : number, k : number) {
     eventTarget.value = e.target as HTMLElement;
-    const elMarks = arr_marks?.value?.[i]?.[k]?.split("-");
+    const elMarks = current_arr_marks?.value?.[i]?.[k]?.split("-");
     // console.log(current_arr_marks.value[el.dataset.i][el.dataset.k].split("-"))
 
     if (elMarks.length == 3) {
@@ -198,37 +201,78 @@ function RightClick(e : MouseEvent, i : number, k : number) {
 
 // Добавление нового тега и замена старого в датасете
 function updateValue(event, array : string[]) {
-    // console.log((event.target as HTMLElement).value);
-    // console.log(eventTarget.value?.dataset.i);
     const i = eventTarget.value?.dataset.i;
     const k = eventTarget.value?.dataset.k;
-    console.log(arr_marks.value[i][k]);
+    const values = [300, 400, 500, 600, 700, 800];
 
-    const parts = arr_marks.value[i][k].split("-");
+    const parts = current_arr_marks.value[i][k].split("-");
+    parts[0] = value1Input.value ? value1npVal.value : value1.value || parts[0];
+    // parts[0] = value1.value || value1npVal.value || parts[0];
+    parts[1] = value2Input.value ? value2npVal.value : value2.value || parts[1];
+    parts[2] = value3Input.value ? value3npVal.value : value3.value || parts[2];
 
-    parts[0] = value1npVal.value || parts[0];
-    parts[1] = value2npVal.value || parts[1];
-    parts[2] = value3npVal.value || parts[2];
+    const set = new Set(current_arr_marks.value.flat());
+    const part = parts.filter(item => item !== undefined && item !== " " && item !== "").join("-");
+    const target = event.target as HTMLInputElement | undefined;
 
-    const set = new Set(arr_marks.value.flat());
-    const part = parts.filter(item => item !== undefined).join("-");
-
-    if ([...set].includes(part)) {
-        toast.add({
-            color: "error",
-            title: "Данная метка уже существует",
-            ui: {
-                description: 'whitespace-pre-line'
+    if (value1Input.value || value2Input.value || value3Input.value) {
+        if ([...set].includes(part)) {
+            toast.add({
+                color: "error",
+                title: "Данная метка уже существует",
+                ui: {
+                    description: 'whitespace-pre-line'
+                }
+            });
+            
+            return;
+        } else {
+            if (target?.value !== undefined) {
+                array.push(target.value);
             }
-        });
-        
-        return;
+            current_arr_marks.value[i][k] = part;
+            
+            if (parts[0] == "B") {
+                const depth = values[Math.floor(Math.random() * values.length)];
+                const color = colors[0]![Math.floor(Math.random() * colors[0]!.length)];
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+            }
+            if (parts[0] == "I") {
+                const depth = values[Math.floor(Math.random() * values.length)];
+                const color = colors[1]![Math.floor(Math.random() * colors[1]!.length)];
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+            }
+            else {
+                const depth = values[Math.floor(Math.random() * values.length)];
+                const color = colors.flat()[Math.floor(Math.random() * colors.flat().length)];
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+            }
+        }
     } else {
-        array.push((event.target as HTMLElement).value);
-        arr_marks.value[i][k] = part;
-        dictOfMarksAndBG.value.set(part, "bg-pink-300/50 rounded-sm")
-        // console.log(i, k);
-        // console.log(arr_marks.value);
+        current_arr_marks.value[i][k] = part;
+        const newObj = JSON.parse(textareaJsons.value[start.value + Number(i)]); 
+        newObj[choosenKeyForMarks.value][k] = part;
+        textareaJsons.value[start.value + Number(i)] = JSON.stringify(newObj);
+        
+        textarea_value.value = textareaJsons.value.join("\n");
+
+        if (![...set].includes(part)) {
+            if (parts[0] == "B") {
+                const depth = values[Math.floor(Math.random() * values.length)];
+                const color = colors[0]![Math.floor(Math.random() * colors[0]!.length)];
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+            }
+            if (parts[0] == "I") {
+                const depth = values[Math.floor(Math.random() * values.length)];
+                const color = colors[1]![Math.floor(Math.random() * colors[1]!.length)];
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+            }
+            else {
+                const depth = values[Math.floor(Math.random() * values.length)];
+                const color = colors.flat()[Math.floor(Math.random() * colors.flat().length)];
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+            }
+        }
     }
 }
 
@@ -242,7 +286,8 @@ function printingWords(nameWords: String) {
 }
 
 // добавление меток из выбранного ключа в датасете json/jsoinl, csv
-function retrievingMarks(nameMarks: String) {
+function retrievingMarks(nameMarks: string) {
+    choosenKeyForMarks.value = nameMarks;
     // добавление в массив с метками
     for (const jsonString of textareaJsons.value) {
         const json = JSON.parse(jsonString);
@@ -550,26 +595,20 @@ const value1Input = ref(false);
 const value2Input = ref(false);
 const value3Input = ref(false);
 
-const itemsSMB = ref(['B', 'I', 'O'])
-const itemsSMC = ref(['LEFT', 'LEG','RIGHT'])
-const itemsSME = ref(['PER', 'ORG', 'LOC', 'FAC',
-                      'GPE', 'DATE', 'MONEY', 'LAW',
-                      'EVENT', 'PRODUCT', 'MISC'])
+const itemsSMB = ref([" ", 'B', 'I', 'O'])
+const itemsSMC = ref([" ", 'LEFT', 'LEG','RIGHT', 'PUBLIC', 'LOCATION'])
+const itemsSME = ref([" ", 'PERSON', 'ORG', 'LOC', 'FACILITY', 'REFS',
+                      'GPE', 'DATE', 'MONEY', 'LAW', 'DOCS',
+                      'EVENT', 'PRODUCT', 'MISC', 'UNK', 'NAT'])
 
 onMounted(() => {
     window.addEventListener('keydown', saveChanges);
 })
-
-onUnmounted(() => {
-    window.removeEventListener('keydown', saveChanges);
-})
-
 </script>
 
 <template>
     <!-- затычка :( -->
-    <div class="bg-red-500/50 bg-red-700/50 bg-red-900/50 bg-orange-500/50 bg-orange-700/50 bg-orange-900/50 bg-amber-500/50 bg-amber-700/50 bg-amber-900/50 bg-yellow-500/50 bg-yellow-700/50 bg-yellow-900/50 bg-lime-500/50 bg-lime-700/50 bg-lime-900/50 bg-green-500/50 bg-green-700/50 bg-green-900/50 bg-emerald-500/50 bg-emerald-700/50 bg-emerald-900/50 bg-teal-500/50 bg-teal-700/50 bg-teal-900/50 bg-cyan-500/50 bg-cyan-700/50 bg-cyan-900/50 bg-sky-500/50 bg-sky-700/50 bg-sky-900/50 bg-blue-500/50 bg-blue-700/50 bg-blue-900/50 bg-indigo-500/50 bg-indigo-700/50 bg-indigo-900/50 bg-violet-500/50 bg-violet-700/50 bg-violet-900/50 bg-purple-500/50 bg-purple-700/50 bg-purple-900/50 bg-fuchsia-500/50 bg-fuchsia-700/50 bg-fuchsia-900/50 bg-pink-500/50 bg-pink-700/50 bg-pink-900/50 bg-rose-500/50 bg-rose-700/50 bg-rose-900/50 bg-slate-500/50 bg-slate-700/50 bg-slate-900/50 bg-olive-500/50 bg-olive-700/50 bg-olive-900/50 bg-mist-500/50 bg-mist-700/50 bg-mist-900/50 bg-mauve-500/50 bg-mauve-700/50 bg-mauve-900/50 bg-zinc-500/50 bg-zinc-700/50 bg-zinc-900/50
-    "></div>
+    <div class="bg-red-300/50 bg-red-400/50 bg-red-500/50 bg-red-600/50 bg-red-700/50 bg-red-800/50 bg-red-900/50 bg-orange-300/50 bg-orange-400/50 bg-orange-500/50 bg-orange-600/50 bg-orange-700/50 bg-orange-800/50 bg-orange-900/50 bg-amber-300/50 bg-amber-400/50 bg-amber-500/50 bg-amber-600/50 bg-amber-700/50 bg-amber-800/50 bg-amber-900/50 bg-yellow-300/50 bg-yellow-400/50 bg-yellow-500/50 bg-yellow-600/50 bg-yellow-700/50 bg-yellow-800/50 bg-yellow-900/50 bg-lime-300/50 bg-lime-400/50 bg-lime-500/50 bg-lime-600/50 bg-lime-700/50 bg-lime-800/50 bg-lime-900/50 bg-green-300/50 bg-green-400/50 bg-green-500/50 bg-green-600/50 bg-green-700/50 bg-green-800/50 bg-green-900/50 bg-emerald-300/50 bg-emerald-400/50 bg-emerald-500/50 bg-emerald-600/50 bg-emerald-700/50 bg-emerald-800/50 bg-emerald-900/50 bg-teal-300/50 bg-teal-400/50 bg-teal-500/50 bg-teal-600/50 bg-teal-700/50 bg-teal-800/50 bg-teal-900/50 bg-cyan-300/50 bg-cyan-400/50 bg-cyan-500/50 bg-cyan-600/50 bg-cyan-700/50 bg-cyan-800/50 bg-cyan-900/50 bg-sky-300/50 bg-sky-400/50 bg-sky-500/50 bg-sky-600/50 bg-sky-700/50 bg-sky-800/50 bg-sky-900/50 bg-blue-300/50 bg-blue-400/50 bg-blue-500/50 bg-blue-600/50 bg-blue-700/50 bg-blue-800/50 bg-blue-900/50 bg-indigo-300/50 bg-indigo-400/50 bg-indigo-500/50 bg-indigo-600/50 bg-indigo-700/50 bg-indigo-800/50 bg-indigo-900/50 bg-violet-300/50 bg-violet-400/50 bg-violet-500/50 bg-violet-600/50 bg-violet-700/50 bg-violet-800/50 bg-violet-900/50 bg-purple-300/50 bg-purple-400/50 bg-purple-500/50 bg-purple-600/50 bg-purple-700/50 bg-purple-800/50 bg-purple-900/50 bg-fuchsia-300/50 bg-fuchsia-400/50 bg-fuchsia-500/50 bg-fuchsia-600/50 bg-fuchsia-700/50 bg-fuchsia-800/50 bg-fuchsia-900/50 bg-pink-300/50 bg-pink-400/50 bg-pink-500/50 bg-pink-600/50 bg-pink-700/50 bg-pink-800/50 bg-pink-900/50 bg-rose-300/50 bg-rose-400/50 bg-rose-500/50 bg-rose-600/50 bg-rose-700/50 bg-rose-800/50 bg-rose-900/50 bg-slate-300/50 bg-slate-400/50 bg-slate-500/50 bg-slate-600/50 bg-slate-700/50 bg-slate-800/50 bg-slate-900/50 bg-olive-300/50 bg-olive-400/50 bg-olive-500/50 bg-olive-600/50 bg-olive-700/50 bg-olive-800/50 bg-olive-900/50 bg-mist-300/50 bg-mist-400/50 bg-mist-500/50 bg-mist-600/50 bg-mist-700/50 bg-mist-800/50 bg-mist-900/50 bg-mauve-300/50 bg-mauve-400/50 bg-mauve-500/50 bg-mauve-600/50 bg-mauve-700/50 bg-mauve-800/50 bg-mauve-900/50 bg-zinc-300/50 bg-zinc-400/50 bg-zinc-500/50 bg-zinc-600/50 bg-zinc-700/50 bg-zinc-800/50 bg-zinc-900/50"></div>
   <div
     class="flex flex-1">
 
@@ -748,8 +787,11 @@ onUnmounted(() => {
                                             v-model="value1"
                                             color="primary" 
                                             class="w-14"
-                                            :items="itemsSMB" 
-                                            @click.stop 
+                                            :items="itemsSMB"
+                                            :ui="{
+                                                item: 'min-h-6'
+                                            }"
+                                            @update:model-value="updateValue($event, itemsSMB)"
                                         />
                                         <UInput
                                             color="success"
@@ -771,8 +813,11 @@ onUnmounted(() => {
                                             v-if="!value2Input"
                                             v-model="value2" 
                                             class='w-25' 
-                                            :items="itemsSMC" 
-                                            @click.stop 
+                                            :items="itemsSMC"
+                                            :ui="{
+                                                item: 'min-h-6'
+                                            }" 
+                                            @update:model-value="updateValue($event, itemsSMB)"
                                         />
                                         <UInput
                                             v-model="value2npVal"
@@ -794,8 +839,11 @@ onUnmounted(() => {
                                             v-if="!value3Input"
                                             v-model="value3" 
                                             class='w-35' 
-                                            :items="itemsSME" 
-                                            @click.stop 
+                                            :items="itemsSME"
+                                            :ui="{
+                                                item: 'min-h-6'
+                                            }"
+                                            @update:model-value="updateValue($event, itemsSMB)"
                                         />
                                         <UInput 
                                             color="success"
@@ -804,13 +852,13 @@ onUnmounted(() => {
                                             v-if="value3Input"
                                             @keydown.enter="updateValue($event, itemsSME)"
                                             />
-                                            <UButton
+                                        <UButton
                                             @click="value3Input = !value3Input; value3npVal = ''"
                                             color="success"
                                             size="sm"
                                             variant="subtle"
                                             icon="i-lucide-plus"
-                                            />
+                                        />
                                     </UFieldGroup>
                                 </div>
                             </div>
@@ -866,7 +914,7 @@ onUnmounted(() => {
     active-variant="subtle"
     :sibling-count="2"
     :ui="{
-        root: 'flex w-full justify-center'
+        root: 'flex min-h-[4rem] w-full justify-center'
     }"
 />
 </template>

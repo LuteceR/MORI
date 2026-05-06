@@ -28,7 +28,7 @@ app.include_router(route_models.router)
 app.include_router(route_datasets.router)
 
 create_file_system_structure(STORAGE_FULL_PATH)
-d = DatasetsFolder()
+
 
 # настройка CORS политики
 origins = [

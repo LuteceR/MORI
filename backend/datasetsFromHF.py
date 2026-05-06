@@ -88,7 +88,7 @@ class DatasetsFolder:
         query = datasets.delete().where(datasets.c.id_datasets == existing_dataset.id_datasets)
         await database.execute(query)
 
-    async def build_tree(self, path: Path):
+    def build_tree(self, path: Path):
         tree = []
         path = self.local_dir_ / path
 

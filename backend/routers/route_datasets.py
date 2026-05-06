@@ -14,7 +14,6 @@ from models import metadata
 from schemas import *
 from modelsFromHF import *
 from routers.route_auth import get_current_user
-from app import d
 
 from middlewares.logger import *
 from UserStorageService import create_file_system_structure
@@ -23,17 +22,19 @@ from datasetsFromHF import DatasetsFolder
 
 router = APIRouter()
 
+d = DatasetsFolder()
 
 @router.post("/dataset")
 async def download_dataset_hf(request: Request,
                               current_user: Annotated[userLogin, Depends(get_current_user)],
                               dataset_repo: str):
+    
     await DatasetsFolder().download_dataset(dataset_repo)
+    
     return { 
         "message" : "Dataset is downloaded successfully" 
         }
 
-# datasetmaster/resumes
 @router.get("/dataset")
 async def get_info(request: Request,
                     current_user: Annotated[userLogin, Depends(get_current_user)],
@@ -53,8 +54,6 @@ async def get_info(request: Request,
                     detail = "Dataset does not exists"
                 )
 
-    # d.download_dataset("fka/prompts.chat")
-
     dataset_path = d.local_dir_ / dataset[0] / dataset[1]
 
     if not dataset_path.is_dir():
@@ -63,7 +62,7 @@ async def get_info(request: Request,
                     detail = "Dataset does not exists"
                 )
     
-    tree = await d.build_tree(Path(dataset[0]) / dataset[1])
+    tree = d.build_tree(Path(dataset[0]) / dataset[1])
 
     return {
         "dataset": f"{dataset[0]}/{dataset[1]}",
