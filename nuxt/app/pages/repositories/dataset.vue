@@ -10,6 +10,8 @@ import { CodeEditor } from 'monaco-editor-vue3';
 import Papa from 'papaparse';
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { object } from 'zod';
+import Chart from 'primevue/chart';
+import { gsap } from 'gsap';
 
 type DatasetResponse = {
     dataset: string,
@@ -53,6 +55,51 @@ const eventTarget = ref<HTMLElement | null>(null);
 
 const choosenKeyForMarks = ref('');
 
+const pieData = computed(() => {
+    const map = new Map<string, number>();
+    const colors = [];
+    // подсчитывание уникальных меток и их кол-во в датасете 
+    for (const item of arr_marks.value.flat()) {
+        map.set(item, ((map.get(item) || 0) + 1))
+    }
+    for(const key of [...map.keys()]) {
+        const el = document.createElement("div");
+        el.className = dictOfMarksAndBG.value.get(key);
+        document.body.appendChild(el);
+        const color = getComputedStyle(el).backgroundColor;
+        document.body.removeChild(el);
+        console.log(color);
+        colors.push(color);
+    }
+
+    const obj = {
+        labels: [...map.keys()],
+        datasets: [
+            {
+                data: [...map.values()],
+                backgroundColor: colors,
+                minBarLength: 15,
+            }
+        ]
+    }
+
+    console.log(obj);
+
+    return obj;
+});
+
+const pieOptions = () => {
+    return {
+        plugins: {
+            legend: {
+                labels: {
+                    usePointStyle: true
+                }
+            }
+        }
+    };
+};
+
 const colors = [
     // B marks
     ["red", "orange", "amber", 
@@ -80,9 +127,9 @@ const BColors = allColors.slice(0, allColors.length / 2)
 const IColors = allColors.slice(allColors.length / 2)
 
 const dictOfMarksAndBG = ref(new Map<string, string>());
-dictOfMarksAndBG.value.set('B', `bg-sky-500/50 rounded-sm`);
-dictOfMarksAndBG.value.set('I', `bg-indigo-500/50 rounded-sm`);
-dictOfMarksAndBG.value.set('O', `bg-stone-500/50 rounded-sm`);
+dictOfMarksAndBG.value.set('B', `bg-sky-500/50`);
+dictOfMarksAndBG.value.set('I', `bg-indigo-500/50`);
+dictOfMarksAndBG.value.set('O', `bg-stone-500/50`);
 
 const classMatrix = computed(() =>
   current_arr_marks.value.map(row =>
@@ -235,17 +282,17 @@ function updateValue(event, array : string[]) {
             if (parts[0] == "B") {
                 const depth = values[Math.floor(Math.random() * values.length)];
                 const color = colors[0]![Math.floor(Math.random() * colors[0]!.length)];
-                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50`);
             }
             if (parts[0] == "I") {
                 const depth = values[Math.floor(Math.random() * values.length)];
                 const color = colors[1]![Math.floor(Math.random() * colors[1]!.length)];
-                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50`);
             }
             else {
                 const depth = values[Math.floor(Math.random() * values.length)];
                 const color = colors.flat()[Math.floor(Math.random() * colors.flat().length)];
-                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50`);
             }
         }
     } else {
@@ -260,17 +307,17 @@ function updateValue(event, array : string[]) {
             if (parts[0] == "B") {
                 const depth = values[Math.floor(Math.random() * values.length)];
                 const color = colors[0]![Math.floor(Math.random() * colors[0]!.length)];
-                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50`);
             }
             if (parts[0] == "I") {
                 const depth = values[Math.floor(Math.random() * values.length)];
                 const color = colors[1]![Math.floor(Math.random() * colors[1]!.length)];
-                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50`);
             }
             else {
                 const depth = values[Math.floor(Math.random() * values.length)];
                 const color = colors.flat()[Math.floor(Math.random() * colors.flat().length)];
-                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(part, `bg-${color}-${depth}/50`);
             }
         }
     }
@@ -302,11 +349,11 @@ function retrievingMarks(nameMarks: string) {
             
             // console.log(`unique[${i}][0] = ${unique[i][0]}`)
             if (unique[i][0] == "B") {
-                dictOfMarksAndBG.value.set(unique[i], `bg-${BColors[i]}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(unique[i], `bg-${BColors[i]}/50`);
             }
 
             if (unique[i][0] == "I") {
-                dictOfMarksAndBG.value.set(unique[i], `bg-${IColors[i]}/50 rounded-sm`);
+                dictOfMarksAndBG.value.set(unique[i], `bg-${IColors[i]}/50`);
             }
         }
     }
@@ -314,6 +361,16 @@ function retrievingMarks(nameMarks: string) {
     // console.log(`unique: ${unique.length}`)
     // console.log(dictOfMarksAndBG.value);
     // console.log(arr_marks);
+}
+
+function openSidebarMarksFun() {
+    openSidebarMarks.value = !openSidebarMarks.value; 
+
+    if (openSidebarMarks.value) {
+        gsap.to('#chartsidebar', { x: 1000 })
+    } else {
+        gsap.to('#chartsidebar', { x: 0 })
+    }
 }
 
 // преобразование текста json/jsonl, csv для получение доступных полей в датасете
@@ -609,8 +666,17 @@ onMounted(() => {
 <template>
     <!-- затычка :( -->
     <div class="bg-red-300/50 bg-red-400/50 bg-red-500/50 bg-red-600/50 bg-red-700/50 bg-red-800/50 bg-red-900/50 bg-orange-300/50 bg-orange-400/50 bg-orange-500/50 bg-orange-600/50 bg-orange-700/50 bg-orange-800/50 bg-orange-900/50 bg-amber-300/50 bg-amber-400/50 bg-amber-500/50 bg-amber-600/50 bg-amber-700/50 bg-amber-800/50 bg-amber-900/50 bg-yellow-300/50 bg-yellow-400/50 bg-yellow-500/50 bg-yellow-600/50 bg-yellow-700/50 bg-yellow-800/50 bg-yellow-900/50 bg-lime-300/50 bg-lime-400/50 bg-lime-500/50 bg-lime-600/50 bg-lime-700/50 bg-lime-800/50 bg-lime-900/50 bg-green-300/50 bg-green-400/50 bg-green-500/50 bg-green-600/50 bg-green-700/50 bg-green-800/50 bg-green-900/50 bg-emerald-300/50 bg-emerald-400/50 bg-emerald-500/50 bg-emerald-600/50 bg-emerald-700/50 bg-emerald-800/50 bg-emerald-900/50 bg-teal-300/50 bg-teal-400/50 bg-teal-500/50 bg-teal-600/50 bg-teal-700/50 bg-teal-800/50 bg-teal-900/50 bg-cyan-300/50 bg-cyan-400/50 bg-cyan-500/50 bg-cyan-600/50 bg-cyan-700/50 bg-cyan-800/50 bg-cyan-900/50 bg-sky-300/50 bg-sky-400/50 bg-sky-500/50 bg-sky-600/50 bg-sky-700/50 bg-sky-800/50 bg-sky-900/50 bg-blue-300/50 bg-blue-400/50 bg-blue-500/50 bg-blue-600/50 bg-blue-700/50 bg-blue-800/50 bg-blue-900/50 bg-indigo-300/50 bg-indigo-400/50 bg-indigo-500/50 bg-indigo-600/50 bg-indigo-700/50 bg-indigo-800/50 bg-indigo-900/50 bg-violet-300/50 bg-violet-400/50 bg-violet-500/50 bg-violet-600/50 bg-violet-700/50 bg-violet-800/50 bg-violet-900/50 bg-purple-300/50 bg-purple-400/50 bg-purple-500/50 bg-purple-600/50 bg-purple-700/50 bg-purple-800/50 bg-purple-900/50 bg-fuchsia-300/50 bg-fuchsia-400/50 bg-fuchsia-500/50 bg-fuchsia-600/50 bg-fuchsia-700/50 bg-fuchsia-800/50 bg-fuchsia-900/50 bg-pink-300/50 bg-pink-400/50 bg-pink-500/50 bg-pink-600/50 bg-pink-700/50 bg-pink-800/50 bg-pink-900/50 bg-rose-300/50 bg-rose-400/50 bg-rose-500/50 bg-rose-600/50 bg-rose-700/50 bg-rose-800/50 bg-rose-900/50 bg-slate-300/50 bg-slate-400/50 bg-slate-500/50 bg-slate-600/50 bg-slate-700/50 bg-slate-800/50 bg-slate-900/50 bg-olive-300/50 bg-olive-400/50 bg-olive-500/50 bg-olive-600/50 bg-olive-700/50 bg-olive-800/50 bg-olive-900/50 bg-mist-300/50 bg-mist-400/50 bg-mist-500/50 bg-mist-600/50 bg-mist-700/50 bg-mist-800/50 bg-mist-900/50 bg-mauve-300/50 bg-mauve-400/50 bg-mauve-500/50 bg-mauve-600/50 bg-mauve-700/50 bg-mauve-800/50 bg-mauve-900/50 bg-zinc-300/50 bg-zinc-400/50 bg-zinc-500/50 bg-zinc-600/50 bg-zinc-700/50 bg-zinc-800/50 bg-zinc-900/50"></div>
-  <div
-    class="flex flex-1">
+    <div
+        class="flex flex-1">
+    
+    <div
+        id="chartsidebar"
+        class="absolute z-100 p-4 -left-185 mb-auto bottom-0 bg-slate-900 h-150 w-180 rounded-lg ring ring-default shadow-lg">
+        <p class="flex justify-center mt-2 mb-2 w-full">Характеристики</p>
+        <ClientOnly>
+            <Chart class="h-full" type="bar" :data="pieData" :options="pieOptions" />
+        </ClientOnly>
+    </div>
 
     <USidebar
       v-model:open="openSidebar"
@@ -640,7 +706,7 @@ onMounted(() => {
             }"
         />
     </USidebar>
-
+        
     <div
         class="flex-1 flex flex-col overflow-hidden h-[88vh] w-full
         lg:peer-data-[variant=floating]:my-4 peer-data-[variant=inset]:m-4 
@@ -684,8 +750,8 @@ onMounted(() => {
             color="neutral"
             variant="ghost"
             aria-label="Toggle sidebar"
-            class="ml-6 flex"
-            @click="openSidebarMarks = !openSidebarMarks"
+            class="ml-6 mb-auto"
+            @click="openSidebarMarksFun"
         />
 
         <UButton
@@ -869,7 +935,7 @@ onMounted(() => {
                                 v-for="(word, k) in text"
                                 :data-i="i"
                                 :data-k="k"
-                                :class="(classMatrix?.[i]?.[k] ?? '') + ' mt-1 pl-1 pr-1'"
+                                :class="(classMatrix?.[i]?.[k] ?? '') + ' rounded-sm mt-1 pl-1 pr-1'"
                                 @contextmenu.capture="RightClick($event, i, k)"
                             >
                             {{ word }}

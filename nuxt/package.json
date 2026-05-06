@@ -17,6 +17,8 @@
     "@nuxthq/ui": "^2.7.0",
     "@primeuix/themes": "^2.0.3",
     "@vee-validate/zod": "^4.15.1",
+    "chart.js": "^4.5.1",
+    "gsap": "^3.15.0",
     "jsonwebtoken": "^9.0.3",
     "maska": "^3.2.0",
     "monaco-editor-vue3": "^1.0.5",
@@ -26,12 +28,14 @@
     "pathlib-js": "^1.5.0",
     "primevue": "^4.5.5",
     "tailwindcss": "^4.2.2",
+    "unplugin-vue-components": "^32.0.0",
     "vee-validate": "^4.15.1",
     "vue-sonner": "^2.0.9",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "@primevue/nuxt-module": "^4.5.5",
     "@types/jsonwebtoken": "^9.0.10",
     "eslint": "^10.2.0",
     "typescript": "^6.0.3",

@@ -1,14 +1,21 @@
+import Components from 'unplugin-vue-components/vite';
+import { PrimeVueResolver } from 'unplugin-vue-components/resolvers'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxthq/ui', 'nuxt-lucide-icons'],
 
   vite: {
+    plugins: [
+      Components({
+        resolvers: [PrimeVueResolver()]
+      })
+    ],
     optimizeDeps: {
       include: [
         '@vee-validate/zod',
         'vee-validate',
         'zod',
-        'monaco-editor',
       ]
     }
   },
