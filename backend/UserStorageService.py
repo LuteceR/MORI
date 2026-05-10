@@ -9,12 +9,12 @@ from fastapi import HTTPException
 from fastapi import File, UploadFile
 
 from directory_tree import DisplayTree
-
+from sqlalchemy import insert, update, delete
 import aiofiles
 
-from models import users, projects
+from models import users, models, datasets, projects, projects_models, projects_datasets
 from db import database, STORAGE_FULL_PATH
-from sqlalchemy import insert, update, delete
+from modelsFromHF import ModelsFolder
 
 
 def create_file_system_structure(storage_full_path:str):
@@ -134,7 +134,7 @@ class UserStorageService:
         path = Path(self.storage_full_path) / "USERS" / self.name_ / "PROJECTS" / project_name / file.filename
 
         if project_name == file.filename:
-            return HTTPException(
+            raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, 
                 detail="folder and file cannot have the same name"
             )
@@ -160,13 +160,13 @@ class UserStorageService:
         path = Path(self.storage_full_path) / "USERS" / self.name_ / "PROJECTS" / project_name / file_to_overwrite
 
         if not path.is_file(): 
-            return HTTPException(
+            raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
                 detail="file does not exist"
             ) 
 
         if project_name == file.filename:
-            return HTTPException(
+            raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, 
                 detail="folder and file cannot have the same name"
             )
@@ -189,3 +189,106 @@ class UserStorageService:
         """
         dirPath = f"{UserStorageService.storage_full_path}/USERS/{owner}/PROJECTS/{project_name}"
         list_files("C:")
+
+
+    async def addModel(self, project_name, model_name):
+        """
+        Добавляет модель в проект
+
+        project_name, model_name - в формате 'автор/название'
+        """
+        query = models.select().where(models.c.name == model_name)
+        model = await database.fetch_one(query)
+
+        if model is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Model {model_name} was not found"
+            )
+        
+        query = models.select().where(projects.c.name == project_name)
+        project = await database.fetch_one(query)
+
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Project {project_name} was not found"
+            )
+
+        query = projects_models.select().where(projects_models.c.id_projects == project.id_projects and
+                                               projects_models.c.id_models == model.id_models)
+        proj_model_link = await database.fetch_one(query)
+
+        if not proj_model_link is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Model is already added"
+            )
+
+        query = projects_models.insert().values(id_projects=project.id_projects,
+                                               id_models=model.id_models)
+        await database.execute(query)
+
+
+    async def addDataset(self, project_name, dataset_name):
+        """    
+        Добавляет датасет в проект
+
+        project_name, dataset_name - в формате 'автор/название'
+        """
+        query = datasets.select().where(datasets.c.name == dataset_name)
+        dataset = await database.fetch_one(query)
+
+        if dataset is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Dataset {dataset_name} was not found"
+            )
+        
+        query = models.select().where(projects.c.name == project_name)
+        project = await database.fetch_one(query)
+
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Project {project_name} was not found"
+            )
+
+        query = projects_datasets.select().where(projects_datasets.c.id_projects == project.id_projects and
+                                               projects_datasets.c.id_datasets == dataset.id_datasets)
+        proj_dataset_link = await database.fetch_one(query)
+
+        if not proj_dataset_link is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Model is already added"
+            )
+
+        query = projects_datasets.insert().values(id_projects=project.id_projects,
+                                               id_datasets=dataset.id_datasets)
+        await database.execute(query)
+
+
+    async def runModel(self, project_name: str, model_name: str, dataset_name: str, filepath: str, text_key: str):
+        """
+        Запускает выполнение модели на указанном датасете
+        filepath - путь до файла .jsonl с данными
+        text_key - ключ в файле, содержащий текст
+
+        Raises:
+            HTTPException:
+                * HTTP_409_CONFLICT ошибка чтения файла датасета
+                * HTTP_400_BAD_REQUEST модели/датасета/прокта не существует
+        """
+        # TODO: нет проверки принадлежности модели и датасета к проекту
+        query = models.select().where(projects.c.name == project_name)
+        project = await database.fetch_one(query)
+
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Project {project_name} was not found"
+            )
+
+        mf = ModelsFolder(model_name)
+        return await mf.run_model(dataset_name, filepath, text_key)

@@ -13,9 +13,9 @@ from db import database
 from models import users
 from schemas import *
 from modelsFromHF import *
-
 from middlewares.logger import *
 from UserStorageService import UserStorageService
+from app import RUN_MODE
 
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
@@ -24,8 +24,6 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
     async def __call__(self, request: Request) -> Optional[str]:
         authorization: str = request.headers.get("Authorization")
         cookie_authorization: str = request.cookies.get("access_token")
-        print("authorization", authorization)
-        print("cookie_authorization", cookie_authorization)
 
         scheme, param = get_authorization_scheme_param(authorization)
         if scheme.lower() == "bearer":
@@ -34,7 +32,8 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
         if cookie_authorization:
             scheme, param = get_authorization_scheme_param(cookie_authorization)
             if scheme.lower() == "bearer":
-                print("authorization with cookie", param)
+                if RUN_MODE == "development":
+                    print("authorization with cookie: ", param)
                 return param
 
         if self.auto_error:

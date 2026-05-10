@@ -35,6 +35,7 @@ async def download_dataset_hf(request: Request,
         "message" : "Dataset is downloaded successfully" 
         }
 
+
 @router.get("/dataset")
 async def get_info(request: Request,
                     current_user: Annotated[userLogin, Depends(get_current_user)],
@@ -70,9 +71,12 @@ async def get_info(request: Request,
     }
 
 
+@router.get("/datasets")
+async def get_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):
+    return await d.get_datasets()
+
 @router.get("/file_from_dataset")
-async def get_info(request: Request,
-                   current_user: Annotated[userLogin, Depends(get_current_user)],
+async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)],
                     dataset: str,
                     filepath: str):
 

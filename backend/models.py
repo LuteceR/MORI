@@ -14,7 +14,7 @@ projects = Table(
     "projects",
     metadata,
     Column("id_projects", Integer, primary_key=True),
-    Column("name", String(50), nullable=False, index=True),
+    Column("name", String(50), unique=True, nullable=False, index=True),
     Column("description", String),
     Column("id_users", Integer, ForeignKey("users.id_users"), nullable=False)
 )
@@ -23,7 +23,7 @@ models = Table(
     "models",
     metadata,
     Column("id_models", Integer, primary_key=True),
-    Column("name", String(50), nullable=False),
+    Column("name", String(50), unique=True, nullable=False),
     Column("folder_path", String(260), nullable=False),
     Column("id_original_model", Integer, ForeignKey("models.id_models"))
 )
@@ -48,7 +48,7 @@ datasets = Table(
     "datasets",
     metadata,
     Column("id_datasets", Integer, primary_key=True),
-    Column("name", String(50), nullable=False),
+    Column("name", String(50), unique=True, nullable=False),
     Column("url_source", String, nullable=False),
     Column("folder_path", String(260), nullable=False)
 )

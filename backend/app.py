@@ -18,7 +18,7 @@ from middlewares.logger import *
 from UserStorageService import create_file_system_structure
 from UserStorageService import UserStorageService
 from datasetsFromHF import DatasetsFolder
-
+import os
 
 app = FastAPI()
 metadata.create_all(engine)
@@ -29,6 +29,7 @@ app.include_router(route_datasets.router)
 
 create_file_system_structure(STORAGE_FULL_PATH)
 
+RUN_MODE = os.getenv("APP_ENV", "production") # or "development"
 
 # настройка CORS политики
 origins = [

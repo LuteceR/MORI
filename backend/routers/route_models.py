@@ -22,8 +22,7 @@ from datasetsFromHF import DatasetsFolder
 router = APIRouter()
 
 @router.post("/model")
-async def download_model_hf(request: Request, 
-                            current_user: Annotated[userLogin, Depends(get_current_user)],
+async def download_model_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
                             model_repo: str):
     m = ModelsFolder(model_repo)
     await m.create_model()
@@ -33,23 +32,20 @@ async def download_model_hf(request: Request,
 
 
 @router.get("/model")
-async def get_model_information(request: Request,
-                                current_user: Annotated[userLogin, Depends(get_current_user)],
+async def get_model_information(current_user: Annotated[userLogin, Depends(get_current_user)],
                                 model_repo: str):
     mf = ModelsFolder(model_repo)
     return await mf.get_model_info()
 
 
 @router.get("/models")
-async def get_models_information(request: Request,
-                                 current_user: Annotated[userLogin, Depends(get_current_user)]):
+async def get_models_information(current_user: Annotated[userLogin, Depends(get_current_user)]):
     mf = ModelsFolder("")
     return await mf.get_models()
 
 
 @router.post("/model/run")
-async def run_model_on_dataset(request: Request, 
-                               current_user: Annotated[userLogin, Depends(get_current_user)],
+async def run_model_on_dataset(current_user: Annotated[userLogin, Depends(get_current_user)],
                                model_repo: str, 
                                dataset_repo: str, 
                                filepath: str, 
@@ -59,8 +55,7 @@ async def run_model_on_dataset(request: Request,
 
 
 @router.delete("/model")
-async def delete_model(request: Request,
-                       current_user: Annotated[userLogin, Depends(get_current_user)],
+async def delete_model(current_user: Annotated[userLogin, Depends(get_current_user)],
                         model_repo: str):
     m = ModelsFolder(model_repo)
     await m.delete_model()
