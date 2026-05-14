@@ -18,14 +18,13 @@ from routers.route_auth import get_current_user
 from middlewares.logger import *
 from UserStorageService import create_file_system_structure
 from UserStorageService import UserStorageService
-from datasetsFromHF import DatasetsFolder
+from routers.route_datasets import d
 
-router = APIRouter()
+router = APIRouter(tags=["projects"])
 
 # create project
 @router.post("/project")
-async def project_initialization(request: Request, 
-                                 current_user: Annotated[OAuth2PasswordRequestForm, Depends(get_current_user)],
+async def project_initialization(current_user: Annotated[OAuth2PasswordRequestForm, Depends(get_current_user)],
                                  project_name: str, 
                                  description: str):
     
@@ -37,23 +36,18 @@ async def project_initialization(request: Request,
         }
 
 
-# not finished
-@router.get("/project")
-async def get_abstract_info(owner: str,
-                            project_name: str):
-    return {
-        "repo_id": f"{owner}/{project_name}",
-        
-    }
+@router.get("/projects")
+async def get_user_projects(current_user: Annotated[userLogin, Depends(get_current_user)]):
+    user = UserStorageService(current_user.username)
+    return await user.get_user_projects()
     
 
 @router.patch("/project")
-async def upload_project_file(request: Request,
-                              current_user: Annotated[userLogin, Depends(get_current_user)],
+async def upload_project_file(current_user: Annotated[userLogin, Depends(get_current_user)],
                               project_name: str,
                               file: UploadFile):
     
-    username = request.cookies.get('username')
+    username = current_user.username
 
     user = UserStorageService(username)
 
@@ -65,13 +59,12 @@ async def upload_project_file(request: Request,
 
 
 @router.patch("/project-file")
-async def edit_project_file(request: Request,
-                            current_user: Annotated[userLogin, Depends(get_current_user)],
+async def edit_project_file(current_user: Annotated[userLogin, Depends(get_current_user)],
                             project_name: str,
                             filename: str,
                             newFile: UploadFile):
     
-    username = request.cookies.get('username')
+    username = current_user.username
     
     user = UserStorageService(username)
     await user.edit_file(project_name = project_name,
@@ -84,13 +77,11 @@ async def edit_project_file(request: Request,
 
 
 @router.delete("/project")
-async def delete_project(request: Request, 
-                         current_user: Annotated[userLogin, Depends(get_current_user)],
-                         username: str,
+async def delete_project(current_user: Annotated[userLogin, Depends(get_current_user)],
                          project_name: str):
     
     
-    user = UserStorageService(username)
+    user = UserStorageService(current_user.username)
     await user.delete_project(project_name)
 
     return {

@@ -14,7 +14,7 @@ import aiofiles
 
 from models import users, projects
 from db import database, STORAGE_FULL_PATH
-from sqlalchemy import insert, update, delete
+from sqlalchemy import insert, select, update, delete
 
 
 def create_file_system_structure(storage_full_path:str):
@@ -39,6 +39,13 @@ class UserStorageService:
 
     def __init__(self, name: str):
         self.name_ = name
+
+    async def get_user_projects(self):
+        query = select(users.c.username, projects.c.name, projects.c.description).select_from(
+            users.join(projects, projects.c.id_users == users.c.id_users)
+            ).where(users.c.username == self.name_)
+        result = await database.fetch_all(query)
+        return result
 
     def create_user_folder(self):
         """
