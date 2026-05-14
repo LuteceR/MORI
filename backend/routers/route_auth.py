@@ -44,7 +44,7 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
             )
         return None
     
-router = APIRouter()
+router = APIRouter(tags=["auth"])
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="token")
 DUMMY_HASH = pwd_context.hash("dummypassword")
@@ -118,7 +118,7 @@ async def registration(user: userLogin, response: Response):
 # видимо только для dev-инструментов (/docs)
 @router.post("/token")
 async def login_for_access_token(
-    current_user: Annotated[OAuth2PasswordRequestForm, Depends(get_current_user)],
+    current_user: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     
     user = await authenticate_user(current_user.username, current_user.password)

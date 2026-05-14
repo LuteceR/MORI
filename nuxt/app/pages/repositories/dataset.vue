@@ -64,11 +64,10 @@ const pieData = computed(() => {
     }
     for(const key of [...map.keys()]) {
         const el = document.createElement("div");
-        el.className = dictOfMarksAndBG.value.get(key);
+        el.className = dictOfMarksAndBG.value.get(key)!;
         document.body.appendChild(el);
         const color = getComputedStyle(el).backgroundColor;
         document.body.removeChild(el);
-        console.log(color);
         colors.push(color);
     }
 
@@ -82,8 +81,6 @@ const pieData = computed(() => {
             }
         ]
     }
-
-    console.log(obj);
 
     return obj;
 });
@@ -153,8 +150,10 @@ const paginated = computed(() => {
     return arr_words.value?.slice(start.value, start.value + pageSize)
 })
 
-const saveChanges = async (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
+    if (e instanceof KeyboardEvent && e.repeat) return;
+
+    if ((e.ctrlKey || e.metaKey) && 'key' in e && e.key?.toLowerCase() === 's') {
         e.preventDefault();
         
         if (repo_id.value == "") {
@@ -165,7 +164,7 @@ const saveChanges = async (e) => {
                     ui: {
                         description: 'whitespace-pre-line'
                     }
-                })  
+                })
             return;
         }
         if (openedFile.value == "") {
@@ -203,7 +202,8 @@ const saveChanges = async (e) => {
                     ui: {
                         description: 'whitespace-pre-line'
                     }
-                })        
+                })
+                return;     
             }
             if (response.status == 200) {
                 toast.add({
@@ -211,6 +211,7 @@ const saveChanges = async (e) => {
                     title: "Изменения сохранены!",
                     icon: 'i-lucide-save',
                 })
+                return;
             }
         });
 
@@ -223,40 +224,41 @@ function RightClick(e : MouseEvent, i : number, k : number) {
     const elMarks = current_arr_marks?.value?.[i]?.[k]?.split("-");
     // console.log(current_arr_marks.value[el.dataset.i][el.dataset.k].split("-"))
 
-    if (elMarks.length == 3) {
-        value1.value = elMarks[0];
-        value2.value = elMarks[1];
-        value3.value = elMarks[2];
-    } 
-    if (elMarks.length == 2) {
-        if (elMarks[1] in itemsSMC.value) {
-            value1.value = elMarks[0];
-            value2.value = elMarks[1];
-            value3.value = '';
-        } else {
-            value1.value = elMarks[0];
-            value2.value = '';
-            value3.value = elMarks[1];
+    if (elMarks) {
+        if (elMarks.length == 3) {
+            value1.value = elMarks[0] ?? '';
+            value2.value = elMarks[1] ?? '';
+            value3.value = elMarks[2] ?? '';
+        } 
+        if (elMarks.length == 2) {
+            if (elMarks[1]! in itemsSMC.value) {
+                value1.value = elMarks[0] ?? '';
+                value2.value = elMarks[1] ?? '';
+                value3.value = '';
+            } else {
+                value1.value = elMarks[0] ?? '';
+                value2.value = '';
+                value3.value = elMarks[1] ?? '';
+            }
         }
-    }
-    if (elMarks.length == 1) {
-        value1.value = elMarks[0];
-        value2.value = null;
-        value3.value = null;
+        if (elMarks.length == 1) {
+            value1.value = elMarks[0] ?? '';
+            value2.value = '';
+            value3.value = '';
+        }
     }
 }
 
 // Добавление нового тега и замена старого в датасете
 function updateValue(event, array : string[]) {
-    const i = eventTarget.value?.dataset.i;
-    const k = eventTarget.value?.dataset.k;
+    const i = Number(eventTarget.value!.dataset.i);
+    const k = Number(eventTarget.value!.dataset.k);
     const values = [300, 400, 500, 600, 700, 800];
-
-    const parts = current_arr_marks.value[i][k].split("-");
-    parts[0] = value1Input.value ? value1npVal.value : value1.value || parts[0];
-    // parts[0] = value1.value || value1npVal.value || parts[0];
-    parts[1] = value2Input.value ? value2npVal.value : value2.value || parts[1];
-    parts[2] = value3Input.value ? value3npVal.value : value3.value || parts[2];
+    
+    const parts = current_arr_marks.value[i]![k]!.split("-");
+    parts[0] = value1Input.value ? (value1npVal.value ?? '') : (value1.value ?? parts[0] ?? '');
+    parts[1] = value2Input.value ? (value2npVal.value ?? '') : (value2.value ?? parts[1] ?? '');
+    parts[2] = value3Input.value ? (value3npVal.value ?? '') : (value3.value ?? parts[2] ?? '');
 
     const set = new Set(current_arr_marks.value.flat());
     const part = parts.filter(item => item !== undefined && item !== " " && item !== "").join("-");
@@ -271,13 +273,12 @@ function updateValue(event, array : string[]) {
                     description: 'whitespace-pre-line'
                 }
             });
-            
             return;
         } else {
             if (target?.value !== undefined) {
                 array.push(target.value);
             }
-            current_arr_marks.value[i][k] = part;
+            current_arr_marks.value[i]![k] = part;
             
             if (parts[0] == "B") {
                 const depth = values[Math.floor(Math.random() * values.length)];
@@ -418,7 +419,7 @@ function processingMarks(filename: String) {
                 label: e,
                 onSelect(event: Event) {
                     arr_words.value = []
-                    processingWords(e)
+                    // processingWords(e)
                 }
             }));
         
@@ -542,10 +543,10 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                                     processingMarks(item.label!);
                                     processingTable(item.label!);
                                     
-                                    toast.add({
-                                        title: "Файл полностью загружен!",
-                                        icon: 'i-lucide-wifi',
-                                    })
+                                    // toast.add({
+                                    //     title: "Файл полностью загружен!",
+                                    //     icon: 'i-lucide-wifi',
+                                    // })
                                     return;
                                 }
                                 
@@ -553,7 +554,13 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                                 textarea_value.value += val;
                                 return reader?.read().then(processText);
                             });
-                        })
+                        }).finally(() => {
+                            toast.add({
+                                        title: "Файл полностью загружен!",
+                                        icon: 'i-lucide-wifi',
+                                    })
+                            }
+                        );
                         
                     } catch(e) {
                         console.log(e)
@@ -597,7 +604,18 @@ async function request() {
         
         // console.log(tree.value);
     } catch (e) {
-        console.log(e);
+
+        if (e.status == 404 ) {
+            RepoError.value = "датасет не найден";
+            loading.value = false;
+            return;
+        }
+        if (e.status == 400) {
+            RepoError.value = "Неправильный запрос";
+            loading.value = false;
+            return;
+        }
+
         loading.value = false;
         return;
     }
@@ -680,7 +698,7 @@ onMounted(() => {
 
     <USidebar
       v-model:open="openSidebar"
-      variant="inset"
+      variant="sidebar"
       collapsible="offcanvas"
       side="left"
       :ui="{
@@ -690,7 +708,8 @@ onMounted(() => {
         }"
     >
         <template #header>
-            <UUser v-if="!loading" :name="repo_id_header" size="xl" />
+            <!-- <UUser v-if="!loading" :name="repo_id_header" size="xl" class="text-default"/> -->
+            <span v-if="!loading" class="text-default font-medium">{{ repo_id_header }}</span>
             <USkeleton v-if="loading" class="h-6 w-45" />
         </template>
 
@@ -729,18 +748,18 @@ onMounted(() => {
             @click="openSidebar = !openSidebar"
         />
         
-        <UFormField class=" sm:ml-10 mb-auto ml-2 self-center justify-center" :error="RepoError">
+        <UFormField class="sm:ml-10 mb-auto ml-2 self-center justify-center">
             <div class="flex flex-row">
                 <UInput
                     v-model="repo_id"
-                    color="neutral" 
+                    :color="RepoError ? 'error' : 'neutral'" 
                     variant="subtle"
                     size="lg"
                     class="w-50 transform transition-all duration-200"
                     placeholder="user/dataset"
                     @keydown.enter="request"
                 />
-                <!-- <span v-if='RepoError' class="text-error ml-2 self-center text-md">{{ RepoError }}</span> -->
+                <span v-if='RepoError' class="text-error ml-2 self-center text-md">{{ RepoError }}</span>
             </div>
         </UFormField>
         

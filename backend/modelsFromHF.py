@@ -164,7 +164,7 @@ class ModelsFolder:
             raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
                                     detail = f"Model {self.model_name} does not exist!")
         if Path.exists(self.full_path):
-            useful_fields =    { # TODO: некоторые поля имеют вариации названий 
+            useful_fields = { # TODO: некоторые поля имеют вариации названий 
                 "_name_or_path": "name",
                 "n_layers": "n_layers",
                 "activation": "activation",
@@ -175,7 +175,7 @@ class ModelsFolder:
                 "id2label": "id2label",
                 "model_type": "model_type",
                 "vocab_size": "vocab_size"
-                    }
+            }
             try:
                 with open(model.folder_path / Path("config.json")) as config:
                     data = json.load(config)

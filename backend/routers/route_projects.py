@@ -18,9 +18,9 @@ from routers.route_auth import get_current_user
 from middlewares.logger import *
 from UserStorageService import create_file_system_structure
 from UserStorageService import UserStorageService
-from datasetsFromHF import DatasetsFolder
+from routers.route_datasets import d
 
-router = APIRouter()
+router = APIRouter(tags=["projects"])
 
 # create project
 @router.post("/project")
@@ -36,14 +36,10 @@ async def project_initialization(current_user: Annotated[OAuth2PasswordRequestFo
         }
 
 
-# not finished
-@router.get("/project")
-async def get_abstract_info(owner: str,
-                            project_name: str):
-    return {
-        "repo_id": f"{owner}/{project_name}",
-        
-    }
+@router.get("/projects")
+async def get_user_projects(current_user: Annotated[userLogin, Depends(get_current_user)]):
+    user = UserStorageService(current_user.username)
+    return await user.get_user_projects()
     
 
 @router.patch("/project")

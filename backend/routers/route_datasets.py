@@ -20,7 +20,7 @@ from UserStorageService import create_file_system_structure
 from UserStorageService import UserStorageService
 from datasetsFromHF import DatasetsFolder
 
-router = APIRouter()
+router = APIRouter(tags=["datasets"])
 
 d = DatasetsFolder()
 
