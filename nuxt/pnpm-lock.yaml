@@ -65,6 +65,12 @@ importers:
       vee-validate:
         specifier: ^4.15.1
         version: 4.15.1(vue@3.5.32(typescript@6.0.3))
+      vlist:
+        specifier: ^1.8.2
+        version: 1.8.2
+      vlist-vue:
+        specifier: ^1.6.0
+        version: 1.6.0(vlist@1.8.2)(vue@3.5.32(typescript@6.0.3))
       vue-sonner:
         specifier: ^2.0.9
         version: 2.0.9(@nuxt/kit@4.4.2(magicast@0.5.2))(@nuxt/schema@4.4.2)(nuxt@4.4.2(@babel/core@7.29.0)(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@parcel/watcher@2.5.6)(@types/node@25.6.0)(@vue/compiler-sfc@3.5.32)(cac@6.7.14)(db0@0.3.4)(eslint@10.2.0(jiti@1.21.7))(ioredis@5.10.1)(lightningcss@1.32.0)(magicast@0.5.2)(optionator@0.9.4)(rollup-plugin-visualizer@7.0.1(rollup@4.60.1))(rollup@4.60.1)(srvx@0.11.15)(terser@5.46.1)(typescript@6.0.3)(vite@7.3.2(@types/node@25.6.0)(jiti@1.21.7)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))(vue-tsc@3.2.6(typescript@6.0.3))(yaml@2.8.3))
@@ -5603,6 +5609,15 @@ packages:
         optional: true
       yaml:
         optional: true
+
+  vlist-vue@1.6.0:
+    resolution: {integrity: sha512-rkU/0fQkBLLyy5jaTQeDUG3ODKZDaE88EnNZQIMFLkz7P123doLAZqW0Q+4GGLQ0xWaBLJS8lS6ppnrniY4P5Q==}
+    peerDependencies:
+      vlist: ^1.5.0
+      vue: '>=3.0.0'
+
+  vlist@1.8.2:
+    resolution: {integrity: sha512-x6NUExBIuk/rRjTUQkzIltZuWls/heRH5SeLR8inB0r8YC5hdY0LA+jQW/IVgD377ZsOx8DMQ8qe5YrtT5/enA==}
 
   vscode-uri@3.1.0:
     resolution: {integrity: sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==}
@@ -11880,6 +11895,13 @@ snapshots:
       lightningcss: 1.32.0
       terser: 5.46.1
       yaml: 2.8.3
+
+  vlist-vue@1.6.0(vlist@1.8.2)(vue@3.5.32(typescript@6.0.3)):
+    dependencies:
+      vlist: 1.8.2
+      vue: 3.5.32(typescript@6.0.3)
+
+  vlist@1.8.2: {}
 
   vscode-uri@3.1.0: {}
 

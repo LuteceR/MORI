@@ -604,7 +604,18 @@ async function request() {
         
         // console.log(tree.value);
     } catch (e) {
-        console.log(e);
+
+        if (e.status == 404 ) {
+            RepoError.value = "датасет не найден";
+            loading.value = false;
+            return;
+        }
+        if (e.status == 400) {
+            RepoError.value = "Неправильный запрос";
+            loading.value = false;
+            return;
+        }
+
         loading.value = false;
         return;
     }
@@ -687,7 +698,7 @@ onMounted(() => {
 
     <USidebar
       v-model:open="openSidebar"
-      variant="inset"
+      variant="sidebar"
       collapsible="offcanvas"
       side="left"
       :ui="{
@@ -697,7 +708,8 @@ onMounted(() => {
         }"
     >
         <template #header>
-            <UUser v-if="!loading" :name="repo_id_header" size="xl" />
+            <!-- <UUser v-if="!loading" :name="repo_id_header" size="xl" class="text-default"/> -->
+            <span v-if="!loading" class="text-default font-medium">{{ repo_id_header }}</span>
             <USkeleton v-if="loading" class="h-6 w-45" />
         </template>
 
@@ -736,18 +748,18 @@ onMounted(() => {
             @click="openSidebar = !openSidebar"
         />
         
-        <UFormField class=" sm:ml-10 mb-auto ml-2 self-center justify-center" :error="RepoError ?? false">
+        <UFormField class="sm:ml-10 mb-auto ml-2 self-center justify-center">
             <div class="flex flex-row">
                 <UInput
                     v-model="repo_id"
-                    color="neutral" 
+                    :color="RepoError ? 'error' : 'neutral'" 
                     variant="subtle"
                     size="lg"
                     class="w-50 transform transition-all duration-200"
                     placeholder="user/dataset"
                     @keydown.enter="request"
                 />
-                <!-- <span v-if='RepoError' class="text-error ml-2 self-center text-md">{{ RepoError }}</span> -->
+                <span v-if='RepoError' class="text-error ml-2 self-center text-md">{{ RepoError }}</span>
             </div>
         </UFormField>
         
