@@ -39,6 +39,7 @@ useSeoMeta({
       </template>
       <template #right>
         <UColorModeSelect />
+        <ProfileIcon />
       </template>
     </UHeader>
     
