@@ -107,7 +107,7 @@ async def add_dataset_to_project(current_user: Annotated[userLogin, Depends(get_
     
     user = UserStorageService(current_user.username)
 
-    await user.addModel(project_name, dataset_name)
+    await user.addDataset(project_name, dataset_name)
     
     return {
         "message": "Dataset added to project successfully"

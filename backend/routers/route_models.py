@@ -43,15 +43,15 @@ async def get_models_information(current_user: Annotated[userLogin, Depends(get_
     mf = ModelsFolder("")
     return await mf.get_models()
 
-
-@router.post("/model/run")
-async def run_model_on_dataset(current_user: Annotated[userLogin, Depends(get_current_user)],
-                               model_repo: str, 
-                               dataset_repo: str, 
-                               filepath: str, 
-                               text_key: str):
-    mf = ModelsFolder(model_repo)
-    return await mf.run_model(dataset_repo, filepath, text_key)
+# теперь запуск только через проект
+# @router.post("/model/run")
+# async def run_model_on_dataset(current_user: Annotated[userLogin, Depends(get_current_user)],
+#                                model_repo: str, 
+#                                dataset_repo: str, 
+#                                filepath: str, 
+#                                text_key: str):
+#     mf = ModelsFolder(model_repo)
+#     return await mf.run_model(dataset_repo, filepath, text_key)
 
 
 @router.delete("/model")

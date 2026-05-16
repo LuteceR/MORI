@@ -214,7 +214,7 @@ class UserStorageService:
                 detail=f"Model {model_name} was not found"
             )
         
-        query = models.select().where(projects.c.name == project_name)
+        query = projects.select().where(projects.c.name == project_name)
         project = await database.fetch_one(query)
 
         if project is None:
@@ -253,7 +253,7 @@ class UserStorageService:
                 detail=f"Dataset {dataset_name} was not found"
             )
         
-        query = models.select().where(projects.c.name == project_name)
+        query = projects.select().where(projects.c.name == project_name)
         project = await database.fetch_one(query)
 
         if project is None:
@@ -269,7 +269,7 @@ class UserStorageService:
         if not proj_dataset_link is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, 
-                detail=f"Model is already added"
+                detail=f"Dataset is already added"
             )
 
         query = projects_datasets.insert().values(id_projects=project.id_projects,
@@ -289,7 +289,7 @@ class UserStorageService:
                 * HTTP_400_BAD_REQUEST модели/датасета/прокта не существует
         """
         # TODO: нет проверки принадлежности модели и датасета к проекту
-        query = models.select().where(projects.c.name == project_name)
+        query = projects.select().where(projects.c.name == project_name)
         project = await database.fetch_one(query)
 
         if project is None:
