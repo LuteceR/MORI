@@ -10,7 +10,7 @@ from huggingface_hub.utils import (
 )
 from fastapi import HTTPException, status
 import asyncio
-
+import json
 import shutil
 from pathlib import Path
 
@@ -29,7 +29,41 @@ class DatasetsFolder:
         Возвращает все датасеты в БД
         """
         return await database.fetch_all(datasets.select())
-    
+
+
+    async def get_labels_list(self, dataset: str, filepath: str, ner_key: str = "ner") -> set:
+        """
+        Возвращает список меток в файле датасета,
+        при этом создает файл с именем `<filepath>_labels.txt` куда записывает метки
+        и при повторном запуски считывает метки от туда
+        
+        """
+        file = self.local_dir_ / dataset / (str(Path(filepath).with_suffix("")) + "_labels.txt")
+        labels_list = set()
+        # Если файл с метками уже существует
+        if file.is_file():
+            with open(file, 'r', encoding="utf-8") as f:
+                for line in f.readlines():
+                    labels_list.add(line.strip())
+            return labels_list
+
+        data = await self.read_file(dataset, filepath)
+        try:
+            for line in data:
+                if len(line.strip()) == 0: continue
+                labels = json.loads(line)[ner_key]
+                labels_list.update(labels)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                                    detail = f"Invalid label's key or file")
+        
+        labels_list = set([x.upper().strip() for x in labels_list])
+        
+        with open(file, "w", encoding="utf-8") as f:
+            for label in labels_list:
+                f.write(label + "\n")
+        return labels_list
+
 
     async def download_dataset(self, repo_id: str):
         """
@@ -64,7 +98,6 @@ class DatasetsFolder:
         query = datasets.insert().values(name=repo_id, url_source=f"https://huggingface.co/datasets/{repo_id}",
                                 folder_path=str(self.local_dir_ / repo_id))
         await database.execute(query)
-
 
     async def delete_dataset(self, repo_id: str):
         """
@@ -106,7 +139,8 @@ class DatasetsFolder:
                 
         return tree
     
-    async def read_file(self, dataset: str, filepath: str):
+
+    async def read_file(self, dataset: str, filepath: str) -> list:
         """
         чтение файла с локальным путём filepath из датасета.
         dataset - глобальный путь к датасету
@@ -126,6 +160,7 @@ class DatasetsFolder:
                                     detail = f"File {filepath} does not exist!")
         return content
     
+
     async def save_file_changes(self,
                                 dataset: str,
                                 filename: str,

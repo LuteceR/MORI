@@ -25,8 +25,7 @@ router = APIRouter(tags=["datasets"])
 d = DatasetsFolder()
 
 @router.post("/dataset")
-async def download_dataset_hf(request: Request,
-                              current_user: Annotated[userLogin, Depends(get_current_user)],
+async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
                               dataset_repo: str):
     
     await DatasetsFolder().download_dataset(dataset_repo)
@@ -37,8 +36,7 @@ async def download_dataset_hf(request: Request,
 
 
 @router.get("/dataset")
-async def get_info(request: Request,
-                    current_user: Annotated[userLogin, Depends(get_current_user)],
+async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)],
                     dataset: str):
     
     if not "/" in dataset:
@@ -71,9 +69,18 @@ async def get_info(request: Request,
     }
 
 
+@router.get("/dataset-labels")
+async def get_dataset_labels_list(current_user: Annotated[userLogin, Depends(get_current_user)],
+                                  dataset: str,
+                                  filename: str,
+                                  ner_key: str):
+    return await d.get_labels_list(dataset, filename, ner_key)
+
+
 @router.get("/datasets")
 async def get_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):
     return await d.get_datasets()
+
 
 @router.get("/file_from_dataset")
 async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)],
@@ -107,6 +114,7 @@ async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)]
             raise
     return StreamingResponse(gen(), 
                              media_type="application/x-ndjson")
+
 
 @router.post("/save_file_changes")
 async def save_file_changes(current_user: Annotated[userLogin, Depends(get_current_user)],

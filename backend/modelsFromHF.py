@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, status, Response
 from db import database, STORAGE_FULL_PATH
 from sqlalchemy import select
 import asyncio
+import aiofiles
 import shutil
 from pathlib import Path
 import json
@@ -190,6 +191,24 @@ class ModelsFolder:
             except OSError:
                 raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
                         detail = f"Config file not found!")
+            
+    
+    async def get_labels(self):
+        labels = None
+        if not Path.exists(self.full_path):
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
+                        detail = f"Model folder not found!")
+        try:
+            async with aiofiles.open(self.full_path / "config.json", "r", encoding="utf-8") as config:
+                content = await config.read()
+                data = dict(json.loads(content)["id2label"])
+                labels = set([data[str(i)].upper() for i in range(len(data))])
+        except OSError:
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
+                    detail = f"Config file not found!")
+        return labels
+            
+
     
     async def run_model(self, dataset_repo: str, filepath: str, text_key: str):
         """
@@ -197,6 +216,9 @@ class ModelsFolder:
         dataset_repo - датасет
         filepath - путь до файла .jsonl с данными
         text_key - ключ в файле, содержащий текст
+
+        при создания файла со списком меток датасета ожидает
+        что метки находятся по ключу "ner"
         
         Raises:
             HTTPException:
@@ -215,14 +237,24 @@ class ModelsFolder:
             raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
                                     detail = f"Dataset {dataset_repo} does not exist!")
                     
-            
-
-        model_path = self.local_dir_ / self.model_name
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = AutoModelForTokenClassification.from_pretrained(model_path)
-        nlp = pipeline("token-classification", model=model, tokenizer=tokenizer, ignore_labels=[]) # ignore_labels - не выдавать в результате слова с этими метками
-
         dataset = DatasetsFolder()
+        # Получение списка меток
+        model_labels = await self.get_labels()
+        dataset_labels = await dataset.get_labels_list(dataset_repo, filepath, "ner")
+
+        model_diff = model_labels - dataset_labels # есть в модели но нет в датасете
+        ds_diff = dataset_labels - model_labels # есть в датасете но нет в модели
+        print("model_diff:", model_diff)
+        print("ds_diff:", ds_diff)
+        if len(ds_diff) > 0: # в датасете больше меток
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                        detail = f"Dataset has labels {ds_diff} that model does not")
+
+        tokenizer = AutoTokenizer.from_pretrained(self.full_path)
+        model = AutoModelForTokenClassification.from_pretrained(self.full_path)
+        nlp = pipeline("token-classification", model=model, tokenizer=tokenizer, ignore_labels=list(model_diff)) 
+        # ignore_labels - не выдавать в результате слова с этими метками, aggregation_strategy='none', 'simple', 'first', 'average', 'max'
+
         json_data = await dataset.read_file(dataset_repo, filepath)
         data = []
         try:
@@ -237,9 +269,13 @@ class ModelsFolder:
         for line in data:
             line = " ".join(line)
             results = nlp(line)
+            # print(line)
+            # print()
+            # print(results)
+            # print()
             
             words = [word['word'] for word in results]
-            ner = [word['entity'] for word in results]
+            ner = [word['entity'] for word in results] # entity_group если есть pipeline(aggregation_strategy) либо entity
             scores = [float(word['score']) for word in results]
             result_line = {
                 'words': words,
