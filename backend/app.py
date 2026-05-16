@@ -18,9 +18,18 @@ from middlewares.logger import *
 from UserStorageService import create_file_system_structure
 from UserStorageService import UserStorageService
 from datasetsFromHF import DatasetsFolder
+import os
+tags = [
+    {"name": "auth", "description": ""},
+    {"name": "models", "description": ""},
+    {"name": "datasets", "description": ""},
+    {"name": "projects", "description": ""}
+]
 
-
-app = FastAPI()
+app = FastAPI(title="MORI", 
+              description="✨ МОРИ - машинное обучение разворачивание и исследование ✨", 
+              version="0.1.0",
+              openapi_tags=tags)
 metadata.create_all(engine)
 app.include_router(route_auth.router)
 app.include_router(route_projects.router)
@@ -29,6 +38,7 @@ app.include_router(route_datasets.router)
 
 create_file_system_structure(STORAGE_FULL_PATH)
 
+RUN_MODE = os.getenv("APP_ENV", "production") # or "development"
 
 # настройка CORS политики
 origins = [

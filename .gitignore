@@ -3,7 +3,7 @@
 .env.*
 !.env.example
 
-backend/__pycache__
+__pycache__
 backend/.venv
 backend/settings/.env
 backend/middlewares/__pycache__
