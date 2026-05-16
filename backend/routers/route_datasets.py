@@ -29,7 +29,7 @@ async def download_dataset_hf(request: Request,
                               current_user: Annotated[userLogin, Depends(get_current_user)],
                               dataset_repo: str):
     
-    await DatasetsFolder().download_dataset(dataset_repo)
+    await d.download_dataset(dataset_repo)
     
     return { 
         "message" : "Dataset is downloaded successfully" 
@@ -40,6 +40,8 @@ async def get_info(request: Request,
                     current_user: Annotated[userLogin, Depends(get_current_user)],
                     dataset: str):
     
+
+
     if not "/" in dataset:
         raise HTTPException(
                     status_code = status.HTTP_400_BAD_REQUEST, 

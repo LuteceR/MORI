@@ -195,7 +195,7 @@ defineShortcuts(extractShortcuts(teamsItems.value))
             />
         </template>
     </USidebar>
-    <div class="flex flex-col lg:w-[75%] sm:w-[65%] h-screen gap-6 p-8 transform transition-all duration-200 max-h-screen overflow-y-auto">
+    <div class="flex flex-col lg:w-[75%] sm:w-[65%] h-screen gap-6 p-8 transform transition-all duration-200 max-h-screen">
         <div>
             <span class="text-default font-medium">Some name for project idk</span>
         </div>
