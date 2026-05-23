@@ -1,9 +1,20 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'auth'
+})
+
+onMounted(() => {
+  // const response = await fetch("http://localhost:8000/me");
+})
+
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 
+const auth = useAuthStore();
 const open = ref(true)
 
 const colorMode = useColorMode()
+
+console.log()
 
 const teams = ref([
   {

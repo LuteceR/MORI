@@ -20,3 +20,10 @@ class SaveRequest(BaseModel):
     dataset: str
     filename: str
     content: str
+
+class ProjectCreate(BaseModel):
+    project_name: str
+    description: str
+
+class ProjectDelete(BaseModel):
+    project_name: str

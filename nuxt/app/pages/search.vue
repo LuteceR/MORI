@@ -1,4 +1,7 @@
 <script setup lang="ts">
+definePageMeta({
+    middleware: "auth",
+})
 
 import { gsap } from 'gsap';
 import { SiTensorflow, SiPytorch } from 'vue-icons-plus/si';

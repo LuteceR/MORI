@@ -1,5 +1,9 @@
 <script setup lang="ts">
 
+definePageMeta({
+  middleware: 'auth'
+})
+
 import { ref, onMounted, onUnmounted, h } from 'vue';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';

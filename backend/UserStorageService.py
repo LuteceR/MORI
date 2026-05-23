@@ -42,7 +42,7 @@ class UserStorageService:
         self.name_ = name
 
     async def get_user_projects(self):
-        query = select(users.c.username, projects.c.name, projects.c.description).select_from(
+        query = select(users.c.username, projects.c.id_projects, projects.c.name, projects.c.description).select_from(
             users.join(projects, projects.c.id_users == users.c.id_users)
             ).where(users.c.username == self.name_)
         result = await database.fetch_all(query)
@@ -65,6 +65,63 @@ class UserStorageService:
         except FileExistsError as e:
             raise e
         
+    async def get_project_data(self, username: str, id_projects: int):
+        """
+        получение основной инфрормации о проекте пользователя
+        
+        Raises:
+            status.HTTP_404_NOT_FOUND: проект с названием project_name у пользователя username не найден
+            status.HTTP_400_BAD_REQUEST: пользователь с ником username не найден
+        """
+        
+        if UserStorageService.storage_full_path == "": return 0
+
+        try:
+            selected_users = await database.fetch_one(
+                users.select().where(users.c.username == username)
+                )
+            
+            if not selected_users:
+                raise HTTPException(
+                        status_code = status.HTTP_400_BAD_REQUEST, 
+                        detail = "the user does not exist"
+                    )
+            
+            project = await database.fetch_one(
+                projects.select().where(
+                    projects.c.id_users == selected_users['id_users'], 
+                    projects.c.id_projects == id_projects
+                )
+            )
+
+            if not project:
+                raise HTTPException(
+                        status_code = status.HTTP_404_NOT_FOUND, 
+                        detail = "project does not exist"
+                    )
+            
+            project_datasets = await database.fetch_all(
+                datasets.select().select_from(
+                    datasets.join(
+                        projects_datasets,
+                        datasets.c.id_datasets == projects_datasets.c.id_datasets
+                    )
+                ).where(
+                    projects_datasets.c.id_projects == id_projects
+                )
+            )
+            
+            return {
+                "project_datasets" : [dict(row) for row in project_datasets]
+                }
+
+        except Exception as e:
+            return {"error": str(e)}
+            # raise HTTPException(
+            #     status_code = status.HTTP_409_CONFLICT, 
+            #     detail = "Error occurred"
+            #     )
+
     async def create_project(self, project_name: str, description: str = ""):
         """
         создаёт директорию для проекта и добавляет его в 

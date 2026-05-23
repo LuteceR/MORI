@@ -11,3 +11,4 @@ backend/folder
 
 nuxt/pnpm-lock.yaml
 .vscode
+backend/routers/__pycache__

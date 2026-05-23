@@ -24,12 +24,11 @@ router = APIRouter(tags=["projects"])
 
 # create project
 @router.post("/project")
-async def project_initialization(current_user: Annotated[OAuth2PasswordRequestForm, Depends(get_current_user)],
-                                 project_name: str, 
-                                 description: str):
+async def project_initialization(project: ProjectCreate, 
+                                 current_user: Annotated[OAuth2PasswordRequestForm, Depends(get_current_user)]):
     
     user = UserStorageService(current_user.username)
-    await user.create_project(project_name, description)
+    await user.create_project(project.project_name, project.description)
     
     return { 
         "message" : "Project is created successfully"
@@ -55,6 +54,14 @@ async def upload_project_file(current_user: Annotated[userLogin, Depends(get_cur
         "message": "Project's file was uploaded successfully"
     }
 
+@router.get("/project_data")
+async def get_main_project_data(username: str,
+                                id_projects: int, 
+                                request: Request):
+    user = UserStorageService(username)
+    result = await user.get_project_data(username, id_projects)
+
+    return result
 
 @router.patch("/project-file")
 async def edit_project_file(current_user: Annotated[userLogin, Depends(get_current_user)],
@@ -74,12 +81,12 @@ async def edit_project_file(current_user: Annotated[userLogin, Depends(get_curre
 
 
 @router.delete("/project")
-async def delete_project(current_user: Annotated[userLogin, Depends(get_current_user)],
-                         project_name: str):
+async def delete_project(project: ProjectDelete, 
+                         current_user: Annotated[userLogin, Depends(get_current_user)]):
     
     
     user = UserStorageService(current_user.username)
-    await user.delete_project(project_name)
+    await user.delete_project(project.project_name)
 
     return {
         "message": "Project is deleted successfully"

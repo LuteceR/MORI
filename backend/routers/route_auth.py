@@ -142,7 +142,7 @@ async def authorization(user: userLogin, response: Response) -> Token:
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
-        httponly=True,
+        httponly=False,
         secure=False,
         samesite="lax",
         domain="",
@@ -150,8 +150,28 @@ async def authorization(user: userLogin, response: Response) -> Token:
     )
     return response
   
+@router.get('/me')
+# декодирование JWT токена и получение логина и времени истечении токена
+async def get_my_login(request: Request):
+    try: 
+        payload = jwt.decode(
+            request.cookies['access_token'].replace("Bearer ", ""),
+            SECRET_KEY,
+            algorithms=["HS256"],
+        )
 
+    except Exception as e:
+        raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    
+    return {
+        "login": payload['sub'],
+        "exp": payload['exp']
+        }
 
 @router.get('/cookie')
 async def root(request: Request):
-    return request.cookies
+    return { request.cookies }

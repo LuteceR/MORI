@@ -1,4 +1,5 @@
 <script setup lang="ts">
+
 import { ref, onMounted, onUnmounted, h } from 'vue'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate'
@@ -7,6 +8,7 @@ import type { collapsible } from '#build/ui'
 import type { TreeItem } from '@nuxt/ui'
 
 definePageMeta({
+  middleware: 'auth',
   layout: {
     name: 'main'
   }
