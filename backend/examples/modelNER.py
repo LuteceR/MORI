@@ -76,8 +76,8 @@ for i_line, line in enumerate(train_df["words"].values):
         print(words)
         print(train_df["words"].values[i_line])
         print()
-    # else:
-        # f.write(json.dumps({"words": words, "ner": ner, "scores": scores}, ensure_ascii=False) + "\n")
+    else:
+        f.write(json.dumps({"words": words, "ner": ner, "scores": scores}, ensure_ascii=False) + "\n")
 
     # for entity in results:
     #     print(f"{entity['entity']}: {entity['word']} (score: {entity['score']:.2f})")

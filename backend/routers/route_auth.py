@@ -4,7 +4,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.security.utils import get_authorization_scheme_param
 from typing import Annotated, Optional
-from jwt.exceptions import InvalidTokenError
 
 from passlib.context import CryptContext
 from datetime import timedelta
@@ -60,7 +59,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)] = None)
         username = payload.get("sub")
         if username is None:
             raise credentials_exception
-    except InvalidTokenError:
+    except Exception:
         raise credentials_exception
     query = users.select().where(users.c.username == username)
     user = await database.fetch_one(query)

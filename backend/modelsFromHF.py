@@ -9,9 +9,7 @@ import aiofiles
 import shutil
 from pathlib import Path
 import json
-import threading
-import time
-from tqdm.auto import tqdm
+from torch import no_grad, softmax
 
 from models import models, datasets
 from datasetsFromHF import DatasetsFolder
@@ -209,8 +207,86 @@ class ModelsFolder:
         return labels
             
 
+    def __pred__(self, words, tokenizer, model):
+        """
+            Вся эта функция лишь для того, чтобы откллючить 
+            разбинение слов на части токенизатором модели.
+
+            Получает предсказание модели на тексте.
+        """
+        enc = tokenizer(
+            words,
+            is_split_into_words=True,
+            return_tensors="pt",
+            truncation=True
+        )
+
+        with no_grad():
+            outputs = model(**enc)
+
+        logits = outputs.logits[0]
+        probs = softmax(logits, dim=-1)
+        pred_ids = probs.argmax(dim=-1).tolist()
+        word_ids = enc.word_ids(batch_index=0)
+
+        words_r = []
+        ner_r = []
+        score_r = []
+
+        seen_words = set()
+
+        for token_idx, word_idx in enumerate(word_ids):
+            if word_idx is None or word_idx in seen_words:
+                continue
+
+            seen_words.add(word_idx)
+
+            pred_id = pred_ids[token_idx]
+            label = model.config.id2label[pred_id]
+            score = probs[token_idx, pred_id].item()
+
+            words_r.append(words[word_idx])
+            ner_r.append(label)
+            score_r.append(score)
+
+        return {                
+                "words": words_r,
+                "ner": ner_r,
+                "score": score_r
+                }
+
     
-    async def run_model(self, dataset_repo: str, filepath: str, text_key: str):
+    def calcMetrics(self, data_true, data_pred, text_key):
+        total = 0
+        error = 0.0
+        errorLines = []
+
+        for true_item, pred_item in zip(data_true, data_pred):
+            true_ner = true_item['ner']
+            pred_ner = pred_item['ner']
+
+            n = min(len(true_ner), len(pred_ner))
+            total += n
+            for i in range(n):
+                if true_ner[i] != pred_ner[i]:
+                    error += 1
+                    errorLines.append({"word_id": i, 
+                                       "words": true_item[text_key],
+                                       "true_labels": true_ner,
+                                       "pred_labels": pred_ner
+                                       })
+        accuracy = (1 - error / total) if total > 0 else 0.0
+
+        return {
+            "accuracy": accuracy,
+            "errors": error,
+            "total": total,
+            "error_lines": errorLines
+        }
+
+
+
+    async def run_model(self, dataset_repo: str, filepath: str, text_key: str = "words"):
         """
         Запускает модели на данных, 
         dataset_repo - датасет
@@ -257,33 +333,25 @@ class ModelsFolder:
 
         json_data = await dataset.read_file(dataset_repo, filepath)
         data = []
+
         try:
             for line in json_data:
                 if line != "":
-                    data.append(json.loads(line)[text_key])
+                    data.append(json.loads(line))
         except Exception as e:
             raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
                         detail = f"Exception occured when reading file: {e}")
-        
-        result = []
+
+        results = []
         for line in data:
-            line = " ".join(line)
-            results = nlp(line)
-            # print(line)
+            answer = self.__pred__(line[text_key], tokenizer, model)
+            # print(line[text_key])
             # print()
             # print(results)
             # print()
-            
-            words = [word['word'] for word in results]
-            ner = [word['entity'] for word in results] # entity_group если есть pipeline(aggregation_strategy) либо entity
-            scores = [float(word['score']) for word in results]
-            result_line = {
-                'words': words,
-                'ner': ner,
-                'scores': scores
-            }
-            result.append(result_line)
+            results.append(answer)
+        metrics = self.calcMetrics(data, results, text_key)
 
-        return {'result': result}
+        return metrics
 
 
