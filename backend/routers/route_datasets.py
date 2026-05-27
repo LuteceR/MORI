@@ -1,12 +1,8 @@
-from fastapi import APIRouter
 from fastapi import FastAPI, HTTPException, status, Depends, UploadFile, Request
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security.utils import get_authorization_scheme_param
 from typing import Annotated
 from pathlib import Path
-from huggingface_hub.utils import disable_progress_bars
 import aiofiles
 
 from db import database, engine, STORAGE_FULL_PATH
@@ -16,15 +12,37 @@ from modelsFromHF import *
 from routers.route_auth import get_current_user
 
 from middlewares.logger import *
-from UserStorageService import create_file_system_structure
-from UserStorageService import UserStorageService
 from datasetsFromHF import DatasetsFolder
 
-router = APIRouter(tags=["datasets"])
+print("alsfjdhjawheg datasets")
+app = FastAPI(title="MORI auth_service", 
+              description="✨ МОРИ - машинное обучение разворачивание и исследование ✨", 
+              version="0.1.0")
+metadata.create_all(engine)
+
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 d = DatasetsFolder()
 
-@router.post("/dataset")
+@app.post("/dataset")
 async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
                               dataset_repo: str):
     
@@ -35,7 +53,7 @@ async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_cur
         }
 
 
-@router.get("/dataset")
+@app.get("/dataset")
 async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)],
                     dataset: str):
     
@@ -71,7 +89,7 @@ async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)]
     }
 
 
-@router.get("/dataset-labels")
+@app.get("/dataset-labels")
 async def get_dataset_labels_list(current_user: Annotated[userLogin, Depends(get_current_user)],
                                   dataset: str,
                                   filename: str,
@@ -79,12 +97,12 @@ async def get_dataset_labels_list(current_user: Annotated[userLogin, Depends(get
     return await d.get_labels_list(dataset, filename, ner_key)
 
 
-@router.get("/datasets")
+@app.get("/datasets")
 async def get_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):
     return await d.get_datasets()
 
 
-@router.get("/file_from_dataset")
+@app.get("/file_from_dataset")
 async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)],
                     dataset: str,
                     filepath: str):
@@ -118,7 +136,7 @@ async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)]
                              media_type="application/x-ndjson")
 
 
-@router.post("/save_file_changes")
+@app.post("/save_file_changes")
 async def save_file_changes(current_user: Annotated[userLogin, Depends(get_current_user)],
                             data: SaveRequest,):
     

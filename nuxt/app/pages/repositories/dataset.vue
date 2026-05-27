@@ -184,7 +184,7 @@ const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
         }
 
         await fetch(
-            "http://localhost:8000/save_file_changes", {
+            "http://localhost:8002/save_file_changes", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -528,7 +528,7 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                         // console.log(item.label);
                         
                         fetch(
-                            "http://localhost:8000/file_from_dataset?" +
+                            "http://localhost:8002/file_from_dataset?" +
                             new URLSearchParams(
                             {
                                 dataset: repo_id.value,
@@ -584,7 +584,7 @@ async function request() {
     loading.value = true;
     
     try {
-        const response = await $fetch<DatasetResponse>("http://localhost:8000/dataset", {
+        const response = await $fetch<DatasetResponse>("http://localhost:8002/dataset", {
             method: 'GET',
             credentials: "include",
             query:  {

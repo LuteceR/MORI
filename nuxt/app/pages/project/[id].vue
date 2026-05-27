@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 onMounted(() => {
-  // const response = await fetch("http://localhost:8000/me");
+  // const response = await fetch("http://localhost:8001/me");
 })
 
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'

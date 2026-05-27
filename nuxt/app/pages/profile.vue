@@ -21,7 +21,7 @@ const projects = ref<Project[]>([])
 
 async function requestProjects() {
   try {
-    const response = await $fetch<Project[]>("http://localhost:8000/projects", {
+    const response = await $fetch<Project[]>("http://localhost:8004/projects", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -61,7 +61,7 @@ const state = reactive<Schema>({
 
 async function createProject(event: FormSubmitEvent<Schema>) {
   try {
-    const response = await fetch("http://localhost:8000/project", {
+    const response = await fetch("http://localhost:8004/project", {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
@@ -94,7 +94,7 @@ async function createProject(event: FormSubmitEvent<Schema>) {
 
 async function deleteProject() {
   try {
-    const response = await fetch("http://localhost:8000/project", {
+    const response = await fetch("http://localhost:8004/project", {
       method: "DELETE",
       headers: {
           "Content-Type": "application/json",

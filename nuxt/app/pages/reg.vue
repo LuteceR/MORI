@@ -45,7 +45,7 @@ const onSubmit = handleSubmit(async (data) => {
     }
 
     try {
-        const response = await $fetch.raw("http://localhost:8000/registration", {
+        const response = await $fetch.raw("http://localhost:8001/registration", {
             method: 'POST',
             body: JSON.stringify(payload),
             credentials: "include",
