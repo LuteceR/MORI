@@ -4,7 +4,7 @@ const route = useRoute()
 
 const auth = useAuthStore();
 await auth.fetchUser();
-
+const hideIconPages = ['/auth', '/reg', '/profile'];
 
 const items = ref<DropdownMenuItem[][]>([
   [
@@ -28,15 +28,10 @@ const items = ref<DropdownMenuItem[][]>([
 </script>
 
 <template>
-    <div v-if="route.path !== '/profile'" class="m-1 flex gap-2">
-        <!-- <div class="mx-auto text-center text-xs">пользователь</div> -->
+    <div v-if="!hideIconPages.includes(route.path)" class="m-1 flex gap-2">
         <p class="h-full self-center">{{ auth.user.login }}</p>
         <UDropdownMenu :items="items">
             <UButton icon='i-lucide-user' size="md" color="neutral" variant="outline" />
         </UDropdownMenu>
     </div>
 </template>
-<!-- 
-профиль
-сменить пользователя 
--->

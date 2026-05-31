@@ -28,7 +28,6 @@ async function requestProjects() {
             },
             credentials: "include"
         })
-    console.log(response)
     if (response.length === 0) {
       projects.value = []
       return
@@ -73,7 +72,6 @@ async function createProject(event: FormSubmitEvent<Schema>) {
       credentials: "include"
     });
 
-    console.log(response);
     if (response.status == 200) {
       toast.add({
         title: `Проект ${state.projectName} успешно создан!`,
@@ -106,7 +104,6 @@ async function deleteProject() {
     });
 
     await requestProjects();
-    console.log(response.json());
     if (response.status == 200) {
       toast.add({
         icon: 'i-lucide-check',
@@ -150,7 +147,7 @@ onMounted(requestProjects)
       <p>Удалить проект {{ selectedProject }} ?</p>
       <UFieldGroup orientation="horizontal" class="h-10 w-full justify-center">
         <UButton 
-          @click="deleteProject"
+          @click="deleteProject(); isOpen = false"
           color="error" 
           variant="outline" 
           icon="i-lucide-trash" 
@@ -159,71 +156,71 @@ onMounted(requestProjects)
         />
       </UFieldGroup>
     </template>
-
   </UModal>
-    <div class="m-auto mt-3 max-w-60">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path fill="currentColor" d="M12 4a4 4 0 1 1 0 8a4 4 0 0 1 0-8m0 16s8 0 8-2c0-2.4-3.9-5-8-5s-8 2.6-8 5c0 2 8 2 8 2" />
-      </svg>
-      <div class="mx-auto text-2xl font-semibold text-center">{{ auth.user.login }}</div>
-    </div>
+
+  <div class="m-auto mt-3 max-w-60">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 4a4 4 0 1 1 0 8a4 4 0 0 1 0-8m0 16s8 0 8-2c0-2.4-3.9-5-8-5s-8 2.6-8 5c0 2 8 2 8 2" />
+    </svg>
+    <div class="mx-auto text-2xl font-semibold text-center">{{ auth.user.login }}</div>
+  </div>
     
 
-    <div class="flex flex-row h-full w-full mt-15 m-auto justify-center">
-      <UPageList class="flex flex-col mb-auto rounded-t h-full w-[50%] p-4 gap-4 ring ring-default shadow-sm">
-          
-          <div v-if="projects.length === 0" class="text-center h-dvh">
-          У вас нет проектов
-          </div>
+  <div class="flex flex-row h-full w-full mt-15 m-auto justify-center">
+    <UPageList class="flex flex-col mb-auto rounded-t h-full w-[50%] p-4 gap-4 ring ring-default shadow-sm">
+        
+        <div v-if="projects.length === 0" class="text-center h-dvh">
+        У вас нет проектов
+        </div>
 
-          <UCard 
-              v-for="project in projects" 
-              :title="project.name"
-              :description="project.description"
-              variant="subtle"
-              class="w-full"
-          >
-          <template #default>
-              <UFieldGroup orientation="horizontal" class="h-10 w-full">
-                  <UButton color="info" variant="outline" icon="i-lucide-pencil" label="Редактировать" class="w-full" :to="`/project/${project.id_projects}`"/>
-                  <UButton @click='isOpen = true;selectedProject = project.name' color="error" variant="outline" icon="i-lucide-trash" label="Удалить" class="w-full" />
-              </UFieldGroup>
-          </template>
-          </UCard>
-      </UPageList>
+        <UCard 
+            v-for="project in projects" 
+            :title="project.name"
+            :description="project.description"
+            variant="subtle"
+            class="w-full"
+        >
+        <template #default>
+            <UFieldGroup orientation="horizontal" class="h-10 w-full">
+                <UButton color="info" variant="outline" icon="i-lucide-pencil" label="Редактировать" class="w-full" :to="`/project/${project.id_projects}`"/>
+                <UButton @click='isOpen = true;selectedProject = project.name' color="error" variant="outline" icon="i-lucide-trash" label="Удалить" class="w-full" />
+            </UFieldGroup>
+        </template>
+        </UCard>
+    </UPageList>
 
-      <div class="flex flex-col p-4">
-        <UModal
-          :transition="true"
-          :ui="{
-            body: 'flex flex-col justify-center',
-          }">
-          <UButton label="Создать проект" icon="i-lucide-plus" variant="outline" class="h-fit w-fit"/>
+    <div class="flex flex-col p-4">
+      <UModal
+        :transition="true"
+        :ui="{
+          body: 'flex flex-col justify-center',
+        }">
+        <UButton label="Создать проект" icon="i-lucide-plus" variant="outline" class="h-fit w-fit"/>
 
-          <template #header>
-            <p>
-              Создание проекта
-            </p>
-          </template>
-          
-          <template #body>
-            <UForm :schema="schema" :state="state" @submit="createProject" class="flex flex-col self-center space-y-4 mt-2 mb-8">
-              <UFormField label="Название проекта" name="projectName" >
-                <UInput v-model="state.projectName" class="flex justify-center"/>
-              </UFormField>
+        <template #header>
+          <p>
+            Создание проекта
+          </p>
+        </template>
+        
+        <template #body>
+          <UForm :schema="schema" :state="state" @submit="createProject" class="flex flex-col self-center space-y-4 mt-2 mb-8">
+            <UFormField label="Название проекта" name="projectName" >
+              <UInput v-model="state.projectName" class="flex justify-center"/>
+            </UFormField>
 
-              <UFormField label="Описание" name="projectDescription"  >
-                <UInput v-model="state.projectDescription" class="flex justify-center" />
-              </UFormField>
-              
-              <UFieldGroup orientation="horizontal" class="h-10 w-full justify-center">
-                <UButton type="submit" color="info" variant="outline" label="Создать" class="w-[40%] justify-center" />
-              </UFieldGroup>
-            </UForm>
-          </template>
+            <UFormField label="Описание" name="projectDescription"  >
+              <UInput v-model="state.projectDescription" class="flex justify-center" />
+            </UFormField>
+            
+            <UFieldGroup orientation="horizontal" class="h-10 w-full justify-center">
+              <UButton type="submit" color="info" variant="outline" label="Создать" class="w-[40%] justify-center" />
+            </UFieldGroup>
+          </UForm>
+        </template>
 
-        </UModal>
-      </div>
-
+      </UModal>
     </div>
+
+  </div>
 </template>

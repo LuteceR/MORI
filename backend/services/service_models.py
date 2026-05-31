@@ -6,12 +6,11 @@ from db import database, engine, STORAGE_FULL_PATH
 from models import metadata
 from schemas import *
 from modelsFromHF import *
-from routers.route_auth import get_current_user
+from services.service_auth import get_current_user
 
 from middlewares.logger import *
-print("alsfjdhjawheg models")
 
-app = FastAPI(title="MORI auth_service", 
+app = FastAPI(title="MORI models_service", 
               description="✨ МОРИ - машинное обучение разворачивание и исследование ✨", 
               version="0.1.0")
 metadata.create_all(engine)
@@ -54,7 +53,7 @@ async def get_model_information(current_user: Annotated[userLogin, Depends(get_c
 
 
 @app.get("/models")
-async def get_models_information(current_user: Annotated[userLogin, Depends(get_current_user)]):
+async def get_models(current_user: Annotated[userLogin, Depends(get_current_user)]):
     mf = ModelsFolder("")
     return await mf.get_models()
 

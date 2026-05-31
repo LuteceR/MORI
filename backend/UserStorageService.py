@@ -8,15 +8,13 @@ from fastapi import FastAPI, HTTPException, status, Response
 from fastapi import HTTPException
 from fastapi import File, UploadFile
 
-from directory_tree import DisplayTree
-from sqlalchemy import insert, update, delete
+from sqlalchemy import insert, select, delete, and_
 import aiofiles
 
 from models import users, models, datasets, projects, projects_models, projects_datasets
 from db import database, STORAGE_FULL_PATH
-from sqlalchemy import insert, select, update, delete
 from modelsFromHF import ModelsFolder
-
+from metrics import storeResults
 
 def create_file_system_structure(storage_full_path:str):
     """
@@ -38,13 +36,39 @@ def list_files(startpath):
 class UserStorageService:
     storage_full_path = f"{STORAGE_FULL_PATH}"
 
-    def __init__(self, name: str):
-        self.name_ = name
+    def __init__(self, username: str):
+        self.__username = username
+
+
+    async def get_user_project(self, project_id: int):
+        """ Возвращает инфу о проекте, плюс список моделей и датасетов"""
+        base_query = select(
+            users.c.username,
+            projects.c.id_projects,
+            projects.c.name,
+            projects.c.description
+        ).select_from(
+            users.join(projects, projects.c.id_users == users.c.id_users)
+        ).where(
+            (users.c.username == self.__username) & (projects.c.id_projects == project_id)
+        )
+        result = await database.fetch_one(base_query)
+        if not result:
+            return None
+        
+        models_result = await self.get_models(result["name"])
+        datasets_result = await self.get_datasets(result["name"])
+        
+        return {
+            "project": result,
+            "models": models_result,
+            "datasets": datasets_result,
+        }
 
     async def get_user_projects(self):
         query = select(users.c.username, projects.c.id_projects, projects.c.name, projects.c.description).select_from(
             users.join(projects, projects.c.id_users == users.c.id_users)
-            ).where(users.c.username == self.name_)
+            ).where(users.c.username == self.__username)
         result = await database.fetch_all(query)
         return result
 
@@ -60,8 +84,8 @@ class UserStorageService:
         if UserStorageService.storage_full_path == "": return 0
         
         try:
-            Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}").mkdir(parents=True)
-            Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/").mkdir(parents=True)
+            Path(UserStorageService.storage_full_path + f"/USERS/{self.__username}").mkdir(parents=True)
+            Path(UserStorageService.storage_full_path + f"/USERS/{self.__username}/PROJECTS/").mkdir(parents=True)
         except FileExistsError as e:
             raise e
         
@@ -134,10 +158,10 @@ class UserStorageService:
         if UserStorageService.storage_full_path == "": return 0
 
         try:
-            Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/{project_name}").mkdir(parents=True)
-            readme_path = Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/{project_name}/README.md")
+            Path(UserStorageService.storage_full_path + f"/USERS/{self.__username}/PROJECTS/{project_name}").mkdir(parents=True)
+            readme_path = Path(UserStorageService.storage_full_path + f"/USERS/{self.__username}/PROJECTS/{project_name}/README.md")
             readme_path.write_text(description, encoding="utf-8")
-            query = users.select().where(users.c.username == self.name_)
+            query = users.select().where(users.c.username == self.__username)
             existing_user = await database.fetch_one(query)
 
             if existing_user:
@@ -166,8 +190,8 @@ class UserStorageService:
         if UserStorageService.storage_full_path == "": return 0
 
         try:
-            project = Path(UserStorageService.storage_full_path + f"/USERS/{self.name_}/PROJECTS/{project_name}")
-            query = users.select().where(users.c.username == self.name_)
+            project = Path(UserStorageService.storage_full_path + f"/USERS/{self.__username}/PROJECTS/{project_name}")
+            query = users.select().where(users.c.username == self.__username)
             existing_user = await database.fetch_one(query)
 
             if existing_user and project.exists():
@@ -196,7 +220,7 @@ class UserStorageService:
             status.HTTP_422_UNPROCESSABLE_CONTENT: папка и файл не могут иметь одно название
             Exception: непредвиденная ошибка. Вероятно, связанная с правами доступа к директории
         """
-        path = Path(self.storage_full_path) / "USERS" / self.name_ / "PROJECTS" / project_name / file.filename
+        path = Path(self.storage_full_path) / "USERS" / self.__username / "PROJECTS" / project_name / file.filename
 
         if project_name == file.filename:
             raise HTTPException(
@@ -222,7 +246,7 @@ class UserStorageService:
             status.HTTP_422_UNPROCESSABLE_CONTENT: папка и файл не могут иметь одно название
             Exception: непредвиденная ошибка. Вероятно, связанная с правами доступа к директории
         """
-        path = Path(self.storage_full_path) / "USERS" / self.name_ / "PROJECTS" / project_name / file_to_overwrite
+        path = Path(self.storage_full_path) / "USERS" / self.__username / "PROJECTS" / project_name / file_to_overwrite
 
         if not path.is_file(): 
             raise HTTPException(
@@ -256,6 +280,32 @@ class UserStorageService:
         list_files("C:")
 
 
+    async def get_models(self, project_name: str):
+        query = users.select().where(users.c.username == self.__username)
+        user = await database.fetch_one(query)
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        query = projects.select().where(and_(projects.c.name == project_name, projects.c.id_users == user["id_users"]))
+        project = await database.fetch_one(query)
+        
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        project_id = project.id_projects
+        
+        query = (
+            select(models)
+            .join(projects_models, models.c.id_models == projects_models.c.id_models)
+            .where(projects_models.c.id_projects == project_id)
+        )
+        
+        models_rows = await database.fetch_all(query)
+        
+        return models_rows
+
+
     async def addModel(self, project_name, model_name):
         """
         Добавляет модель в проект
@@ -280,8 +330,8 @@ class UserStorageService:
                 detail=f"Project {project_name} was not found"
             )
 
-        query = projects_models.select().where(projects_models.c.id_projects == project.id_projects and
-                                               projects_models.c.id_models == model.id_models)
+        query = projects_models.select().where(and_(projects_models.c.id_projects == project.id_projects,
+                                               projects_models.c.id_models == model.id_models))
         proj_model_link = await database.fetch_one(query)
 
         if not proj_model_link is None:
@@ -293,6 +343,59 @@ class UserStorageService:
         query = projects_models.insert().values(id_projects=project.id_projects,
                                                id_models=model.id_models)
         await database.execute(query)
+
+
+    async def removeModel(self, project_name, model_name):
+        """
+        Удаляет модель из проекта
+        """
+        query = models.select().where(models.c.name == model_name)
+        model = await database.fetch_one(query)
+
+        if model is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Model {model_name} was not found"
+            )
+        
+        query = projects.select().where(projects.c.name == project_name)
+        project = await database.fetch_one(query)
+
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Project {project_name} was not found"
+            )
+
+        query = projects_models.delete().where(and_(projects_models.c.id_projects == project.id_projects,
+                                               projects_models.c.id_models == model.id_models))
+        await database.execute(query)
+
+
+    async def get_datasets(self, project_name: str):
+        query = users.select().where(users.c.username == self.__username)
+        user = await database.fetch_one(query)
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        query = projects.select().where(and_(projects.c.name == project_name, projects.c.id_users == user["id_users"]))
+        project = await database.fetch_one(query)
+        
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        project_id = project.id_projects
+        
+        query = (
+            select(datasets)
+            .join(projects_datasets, datasets.c.id_datasets == projects_datasets.c.id_datasets)
+            .where(projects_datasets.c.id_projects == project_id)
+        )
+        
+        datasets_rows = await database.fetch_all(query)
+        
+        return datasets_rows
 
 
     async def addDataset(self, project_name, dataset_name):
@@ -319,8 +422,8 @@ class UserStorageService:
                 detail=f"Project {project_name} was not found"
             )
 
-        query = projects_datasets.select().where(projects_datasets.c.id_projects == project.id_projects and
-                                               projects_datasets.c.id_datasets == dataset.id_datasets)
+        query = projects_datasets.select().where(and_(projects_datasets.c.id_projects == project.id_projects,
+                                               projects_datasets.c.id_datasets == dataset.id_datasets))
         proj_dataset_link = await database.fetch_one(query)
 
         if not proj_dataset_link is None:
@@ -331,6 +434,34 @@ class UserStorageService:
 
         query = projects_datasets.insert().values(id_projects=project.id_projects,
                                                id_datasets=dataset.id_datasets)
+        await database.execute(query)
+
+
+    async def removeDataset(self, project_name, dataset_name):
+        """
+        Удаляет модель из проекта
+        """
+        query = datasets.select().where(datasets.c.name == dataset_name)
+        dataset = await database.fetch_one(query)
+
+
+        if dataset is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Dataset {dataset_name} was not found"
+            )
+        
+        query = projects.select().where(projects.c.name == project_name)
+        project = await database.fetch_one(query)
+
+
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Project {project_name} was not found"
+            )
+        query = projects_datasets.delete().where(and_(projects_datasets.c.id_projects == project.id_projects,
+                                               projects_datasets.c.id_datasets == dataset.id_datasets))
         await database.execute(query)
 
 
@@ -356,4 +487,5 @@ class UserStorageService:
             )
 
         mf = ModelsFolder(model_name)
-        return await mf.run_model(dataset_name, filepath, text_key)
+        results = await mf.run_model(project.id_projects, dataset_name, filepath, text_key)
+        return results

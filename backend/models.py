@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, TIMESTAMP
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, TIMESTAMP, TEXT, Float
 
 metadata = MetaData()
 
@@ -73,9 +73,11 @@ metrics = Table(
     "metrics",
     metadata,
     Column("id_metrics", Integer, primary_key=True),
-    Column("date", TIMESTAMP, nullable=False),
     Column("id_projects", Integer, ForeignKey("projects.id_projects"), nullable=False),
     Column("id_datasets", Integer, ForeignKey("datasets.id_datasets"), nullable=False),
+    Column("id_models", Integer, ForeignKey("models.id_models"), nullable=False),
+    Column("date", TIMESTAMP, nullable=False),
+    Column("details", TEXT, nullable=True),
 )
 
 models_snapshots = Table(
@@ -116,5 +118,6 @@ metrics_results = Table(
     metadata,
     Column("id_metrics_results", Integer, primary_key=True),
     Column("id_metrics_labels", Integer, ForeignKey("metrics_labels.id_metrics_labels"), nullable=False),
-    Column("id_metrics", Integer, ForeignKey("metrics.id_metrics"), nullable=False)
+    Column("id_metrics", Integer, ForeignKey("metrics.id_metrics"), nullable=False),
+    Column("value", Float, nullable=False)
 )

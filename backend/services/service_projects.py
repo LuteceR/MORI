@@ -7,13 +7,13 @@ from db import database, engine, STORAGE_FULL_PATH
 from models import metadata
 from schemas import *
 from modelsFromHF import *
-from routers.route_auth import get_current_user
+from services.service_auth import get_current_user
 
 from middlewares.logger import *
 from UserStorageService import UserStorageService
-print("alsfjdhjawheg projects")
+from services.routers.router_metrics import router as router_metrics
 
-app = FastAPI(title="MORI auth_service", 
+app = FastAPI(title="MORI projects_service", 
               description="✨ МОРИ - машинное обучение разворачивание и исследование ✨", 
               version="0.1.0")
 metadata.create_all(engine)
@@ -21,6 +21,7 @@ metadata.create_all(engine)
 origins = [
     "http://localhost:3000",
 ]
+app.include_router(router_metrics)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +39,20 @@ async def startup():
 async def shutdown():
     await database.disconnect()
 
+
+@app.get("/project")
+async def get_project(current_user: Annotated[userLogin, Depends(get_current_user)],
+                      project_id: int):
+    user = UserStorageService(current_user.username)
+    return await user.get_user_project(project_id)
+
+
+@app.get("/projects")
+async def get_user_projects(current_user: Annotated[userLogin, Depends(get_current_user)]):
+    user = UserStorageService(current_user.username)
+    return await user.get_user_projects()
+
+
 # create project
 @app.post("/project")
 async def project_initialization(project: ProjectCreate, 
@@ -49,12 +64,6 @@ async def project_initialization(project: ProjectCreate,
     return { 
         "message" : "Project is created successfully"
         }
-
-
-@app.get("/projects")
-async def get_user_projects(current_user: Annotated[userLogin, Depends(get_current_user)]):
-    user = UserStorageService(current_user.username)
-    return await user.get_user_projects()
     
 
 @app.patch("/project")
@@ -70,8 +79,9 @@ async def upload_project_file(current_user: Annotated[userLogin, Depends(get_cur
         "message": "Project's file was uploaded successfully"
     }
 
+
 @app.get("/project_data")
-async def get_main_project_data(username: str,
+async def get_main_(username: str,
                                 id_projects: int, 
                                 request: Request):
     user = UserStorageService(username)
@@ -108,6 +118,14 @@ async def delete_project(project: ProjectDelete,
         "message": "Project is deleted successfully"
     }
 
+# not used
+@app.get("/project/models")
+async def get_project_models(current_user: Annotated[userLogin, Depends(get_current_user)],
+                             project_name: str):
+    
+    user = UserStorageService(current_user.username)
+    return await user.get_models(project_name)
+
 
 @app.patch("/project/model")
 async def add_model_to_project(current_user: Annotated[userLogin, Depends(get_current_user)],
@@ -123,6 +141,19 @@ async def add_model_to_project(current_user: Annotated[userLogin, Depends(get_cu
     }
 
 
+@app.delete("/project/model")
+async def remove_model_from_project(current_user: Annotated[userLogin, Depends(get_current_user)],
+                              project_name: str,
+                              model_name: str):
+    
+    user = UserStorageService(current_user.username)
+    await user.removeModel(project_name, model_name)
+    
+    return {
+        "message": "Model removed successfully"
+    }
+
+
 @app.patch("/project/dataset")
 async def add_dataset_to_project(current_user: Annotated[userLogin, Depends(get_current_user)],
                               project_name: str,
@@ -134,6 +165,18 @@ async def add_dataset_to_project(current_user: Annotated[userLogin, Depends(get_
     
     return {
         "message": "Dataset added to project successfully"
+    }
+
+
+@app.delete("/project/dataset")
+async def remove_dataset_from_project(current_user: Annotated[userLogin, Depends(get_current_user)],
+                              project_name: str,
+                              dataset_name: str):
+    user = UserStorageService(current_user.username)
+    await user.removeDataset(project_name, dataset_name)
+    
+    return {
+        "message": "Dataset removed successfully"
     }
 
 

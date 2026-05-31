@@ -13,6 +13,7 @@ from torch import no_grad, softmax
 
 from models import models, datasets
 from datasetsFromHF import DatasetsFolder
+from metrics import *
 
 class ModelsFolder:
     """
@@ -255,38 +256,8 @@ class ModelsFolder:
                 "score": score_r
                 }
 
-    
-    def calcMetrics(self, data_true, data_pred, text_key):
-        total = 0
-        error = 0.0
-        errorLines = []
 
-        for true_item, pred_item in zip(data_true, data_pred):
-            true_ner = true_item['ner']
-            pred_ner = pred_item['ner']
-
-            n = min(len(true_ner), len(pred_ner))
-            total += n
-            for i in range(n):
-                if true_ner[i] != pred_ner[i]:
-                    error += 1
-                    errorLines.append({"word_id": i, 
-                                       "words": true_item[text_key],
-                                       "true_labels": true_ner,
-                                       "pred_labels": pred_ner
-                                       })
-        accuracy = (1 - error / total) if total > 0 else 0.0
-
-        return {
-            "accuracy": accuracy,
-            "errors": error,
-            "total": total,
-            "error_lines": errorLines
-        }
-
-
-
-    async def run_model(self, dataset_repo: str, filepath: str, text_key: str = "words"):
+    async def run_model(self, project_id, dataset_repo: str, filepath: str, text_key: str = "words"):
         """
         Запускает модели на данных, 
         dataset_repo - датасет
@@ -350,8 +321,8 @@ class ModelsFolder:
             # print(results)
             # print()
             results.append(answer)
-        metrics = self.calcMetrics(data, results, text_key)
-
+        metrics = await calcMetrics(data, results, text_key)
+        await storeResults(metrics, project_id, db_dataset.id_datasets, db_model.id_models)
         return metrics
 
 
