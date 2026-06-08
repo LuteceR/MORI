@@ -123,7 +123,7 @@ class DatasetsFolder:
 
     def build_tree(self, path: Path):
         tree = []
-        path = self.local_dir_ / path
+        # path = self.local_dir_ / path
 
         for el in path.iterdir():
             if el.is_file():

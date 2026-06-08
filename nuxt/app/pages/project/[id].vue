@@ -257,6 +257,8 @@ async function removeDatasetFromProject(dataset: Dataset) {
 const isModelRunning = ref(false)
 const runFilePath = ref('test.jsonl')
 const runWordsKey = ref('words')
+const showThreshold = ref(false)
+const thresholdValue = ref<number>(0.5)
 
 async function runModel() {
   if (runFilePath.value == '' || runWordsKey.value == '') {
@@ -265,11 +267,20 @@ async function runModel() {
   }
   try {
     isModelRunning.value = true
-    const metrics = await $fetch(`http://localhost:8004/project/run?project_name=${thisProject.value.name}&model_name=${modelToAdd.value}&dataset_name=${datasetToAdd.value}&filepath=${runFilePath.value}&text_key=${runWordsKey.value}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: "include",
-    })
+    const metrics = await $fetch(
+      `http://localhost:8004/project/run?` +
+      `project_name=${thisProject.value.name}&` +
+      `model_name=${modelToAdd.value}&` +
+      `dataset_name=${datasetToAdd.value}&` +
+      `filepath=${runFilePath.value}&` +
+      `text_key=${runWordsKey.value}` +
+      (showThreshold.value ? `&threshold=${thresholdValue.value}` : ''),
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      }
+    )
     
     showSuccess('Запуск модели завершен!')
   } catch (e) {
@@ -346,6 +357,21 @@ async function runModel() {
             </UFormField>
             <UFormField label="Json-ключ текста">
               <UInput class="mb-4 w-[85%]" v-model="runWordsKey" placeholder="words"/>
+            </UFormField>
+            <UFormField>
+              <div class="flex items-center gap-2">
+                <UTooltip text="Если уверенность модели меньше порога, ставится метка 'O'">
+                  <UCheckbox 
+                    v-model="showThreshold" 
+                    label="Порог"
+                    size="md"
+                  />
+                <UInput
+                  v-if="showThreshold"v-model="thresholdValue" class="w-24"
+                  type="number" step="0.05" min="0" max="1" placeholder="0.5"
+                />
+                </UTooltip>
+              </div>
             </UFormField>
           </template>
 

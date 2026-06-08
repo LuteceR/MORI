@@ -80,7 +80,7 @@ async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)]
                     detail = "Dataset does not exists"
                 )
     
-    tree = d.build_tree(Path(dataset[0]) / dataset[1])
+    tree = d.build_tree(dataset_path)
 
     return {
         "dataset": f"{dataset[0]}/{dataset[1]}",

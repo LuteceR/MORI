@@ -465,7 +465,8 @@ class UserStorageService:
         await database.execute(query)
 
 
-    async def runModel(self, project_name: str, model_name: str, dataset_name: str, filepath: str, text_key: str):
+    async def runModel(self, project_name: str, model_name: str, dataset_name: str, 
+                       filepath: str, text_key: str, threshold: float | None = None):
         """
         Запускает выполнение модели на указанном датасете
         filepath - путь до файла .jsonl с данными
@@ -487,5 +488,6 @@ class UserStorageService:
             )
 
         mf = ModelsFolder(model_name)
-        results = await mf.run_model(project.id_projects, dataset_name, filepath, text_key)
+        results = await mf.run_model(project.id_projects, dataset_name, 
+                                     filepath, text_key=text_key, threshold=threshold)
         return results

@@ -208,7 +208,7 @@ class ModelsFolder:
         return labels
             
 
-    def __pred__(self, words, tokenizer, model):
+    def __pred__(self, words, tokenizer, model, threshold):
         """
             Вся эта функция лишь для того, чтобы откллючить 
             разбинение слов на части токенизатором модели.
@@ -246,6 +246,10 @@ class ModelsFolder:
             label = model.config.id2label[pred_id]
             score = probs[token_idx, pred_id].item()
 
+            # Добавляем проверку порога, если уверенность ниже порога - ставим 'O'
+            if not threshold is None and score < threshold and label != "O":
+                label = "O"
+
             words_r.append(words[word_idx])
             ner_r.append(label)
             score_r.append(score)
@@ -257,7 +261,8 @@ class ModelsFolder:
                 }
 
 
-    async def run_model(self, project_id, dataset_repo: str, filepath: str, text_key: str = "words"):
+    async def run_model(self, project_id, dataset_repo: str, 
+                        filepath: str, text_key: str = "words", threshold: float | None = None):
         """
         Запускает модели на данных, 
         dataset_repo - датасет
@@ -315,7 +320,7 @@ class ModelsFolder:
 
         results = []
         for line in data:
-            answer = self.__pred__(line[text_key], tokenizer, model)
+            answer = self.__pred__(line[text_key], tokenizer, model, threshold)
             # print(line[text_key])
             # print()
             # print(results)

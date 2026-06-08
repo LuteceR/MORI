@@ -186,8 +186,9 @@ async def run_project(current_user: Annotated[userLogin, Depends(get_current_use
                               model_name: str,
                               dataset_name: str,
                               filepath: str, 
-                              text_key: str):
+                              text_key: str,
+                              threshold: float | None = None):
     
     user = UserStorageService(current_user.username)
     
-    return await user.runModel(project_name, model_name, dataset_name, filepath, text_key)
+    return await user.runModel(project_name, model_name, dataset_name, filepath, text_key, threshold=threshold)
