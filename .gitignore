@@ -7,6 +7,9 @@ __pycache__
 backend/.venv
 backend/settings/.env
 backend/middlewares/__pycache__
+backend/services/routers/__pycache__
+backend/services/__pycache__
+backend/alembic.ini
 backend/folder
 
 nuxt/pnpm-lock.yaml

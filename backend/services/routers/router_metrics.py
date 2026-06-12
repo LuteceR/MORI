@@ -5,8 +5,6 @@ from services.service_auth import get_current_user
 from metrics import createCommonMetricsLabels, getMetrics
 from schemas import userLogin
 
-
-
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 
 @router.get("/")

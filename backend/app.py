@@ -22,6 +22,15 @@ app = FastAPI(title="MORI",
               description="✨ МОРИ - машинное обучение разворачивание и исследование ✨", 
               version="0.1.0",
               openapi_tags=tags)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 metadata.create_all(engine)
 app.include_router(route_auth.router)
 app.include_router(route_projects.router)
@@ -31,18 +40,6 @@ app.include_router(route_datasets.router)
 create_file_system_structure(STORAGE_FULL_PATH)
 disable_progress_bars() # выкл вывод загрузки у huggingface_hub
 
-# настройка CORS политики
-origins = [
-    "http://localhost:3000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.on_event("startup")
 async def startup():

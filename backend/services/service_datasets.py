@@ -19,14 +19,10 @@ app = FastAPI(title="MORI datasets_service",
               version="0.1.0")
 metadata.create_all(engine)
 
-origins = [
-    "http://localhost:3000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -42,7 +38,7 @@ async def shutdown():
 d = DatasetsFolder()
 
 @app.post("/dataset")
-async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
+async def download_dataset_hf(#current_user: Annotated[userLogin, Depends(get_current_user)],
                               dataset_repo: str):
     
     await d.download_dataset(dataset_repo)

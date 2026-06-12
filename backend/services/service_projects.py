@@ -18,14 +18,11 @@ app = FastAPI(title="MORI projects_service",
               version="0.1.0")
 metadata.create_all(engine)
 
-origins = [
-    "http://localhost:3000",
-]
 app.include_router(router_metrics)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
