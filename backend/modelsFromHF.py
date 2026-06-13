@@ -1,4 +1,4 @@
-from huggingface_hub import snapshot_download
+from huggingface_hub import snapshot_download, ModelCard
 from huggingface_hub.errors import RepositoryNotFoundError, LocalEntryNotFoundError
 from transformers import pipeline, AutoModelForTokenClassification, AutoTokenizer
 from fastapi import FastAPI, HTTPException, status, Response
@@ -89,7 +89,22 @@ class ModelsFolder:
         """
         return await database.fetch_all(models.select())
 
-    
+    @staticmethod
+    async def get_models_readme_data():
+        """
+        Возвращает все модели в из бд с их данными из README
+        """
+        query = models.select()
+        res = await database.fetch_all(query)
+        try:
+            for model in res:
+                card = ModelCard.load(model["name"])
+                metadata = card.data.to_dict()
+                metadata['name'] = model["name"]
+                yield metadata
+        except Exception as err:
+            print("ERROR\n", err)
+            raise
     async def create_model(self, orig_model_id: int = None):
         """
         Загружает модель с huggingface и создает запись в бд

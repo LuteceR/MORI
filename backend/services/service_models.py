@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, status, Depends, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 
+from fastapi.responses import StreamingResponse
+
 from db import database, engine, STORAGE_FULL_PATH
 from models import metadata
 from schemas import *
@@ -13,15 +15,16 @@ from middlewares.logger import *
 app = FastAPI(title="MORI models_service", 
               description="✨ МОРИ - машинное обучение разворачивание и исследование ✨", 
               version="0.1.0")
-metadata.create_all(engine)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+metadata.create_all(engine)
 
 @app.on_event("startup")
 async def startup():
@@ -40,7 +43,18 @@ async def download_model_hf(current_user: Annotated[userLogin, Depends(get_curre
         "message" : "Model is downloaded successfully" 
         }
 
+@app.get("/get_models_metadata")
+async def get_metadata_of_all_models(current_user: Annotated[userLogin, Depends(get_current_user)]):
+    m = ModelsFolder('')
 
+    async def gen():
+        async for metadata in m.get_models_readme_data():
+            yield json.dumps(metadata, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        gen(),
+        media_type="application/x-ndjson"
+    )
 @app.get("/model")
 async def get_model_information(current_user: Annotated[userLogin, Depends(get_current_user)],
                                 model_repo: str):

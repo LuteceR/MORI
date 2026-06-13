@@ -11,6 +11,8 @@ backend/services/routers/__pycache__
 backend/services/__pycache__
 backend/alembic.ini
 backend/folder
+backend/services/RUN_BACKEND.bat
+backend/alembic
 
 nuxt/pnpm-lock.yaml
 .vscode

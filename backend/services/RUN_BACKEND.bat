@@ -15,9 +15,9 @@ if "%VENV_DIR%"=="" (
 set ACTIVATE=%CD%\%VENV_DIR%\Scripts\activate.bat
 set BACKEND_PATH=%CD%\backend
 
-start "AUTH 8001" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_auth:app --host 127.0.0.1 --port 8001 --reload"
-start "DATASETS 8002" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_datasets:app --host 127.0.0.1 --port 8002 --reload"
-start "MODELS 8003" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_models:app --host 127.0.0.1 --port 8003 --reload"
-start "PROJECTS 8004" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_projects:app --host 127.0.0.1 --port 8004 --reload"
+start "AUTH 8001" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_auth:app --port 8001"
+start "DATASETS 8002" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_datasets:app --port 8002"
+start "MODELS 8003" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_models:app --port 8003"
+start "PROJECTS 8004" cmd /k "cd /d %BACKEND_PATH% && call "%ACTIVATE%" && set PYTHONPATH=%BACKEND_PATH% && granian --interface asgi services.service_projects:app --port 8004"
 
 echo Все сервисы запущены.

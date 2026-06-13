@@ -29,7 +29,7 @@ const items = ref<DropdownMenuItem[][]>([
 
 <template>
     <div v-if="!hideIconPages.includes(route.path)" class="m-1 flex gap-2">
-        <p class="h-full self-center">{{ auth.user.login }}</p>
+        <p class="h-full self-center">{{ auth.user.login ? auth.user.login : 'Пусто' }}</p>
         <UDropdownMenu :items="items">
             <UButton icon='i-lucide-user' size="md" color="neutral" variant="outline" />
         </UDropdownMenu>

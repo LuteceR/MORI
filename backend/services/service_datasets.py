@@ -22,7 +22,7 @@ metadata.create_all(engine)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -38,7 +38,7 @@ async def shutdown():
 d = DatasetsFolder()
 
 @app.post("/dataset")
-async def download_dataset_hf(#current_user: Annotated[userLogin, Depends(get_current_user)],
+async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
                               dataset_repo: str):
     
     await d.download_dataset(dataset_repo)

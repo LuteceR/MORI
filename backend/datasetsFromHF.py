@@ -85,9 +85,12 @@ class DatasetsFolder:
                                     detail = f"Dataset {repo_id} already exist!")
 
         try:
-            await asyncio.to_thread(snapshot_download(repo_id=repo_id,
-                            repo_type="dataset",
-                            local_dir=f"{DatasetsFolder.local_dir_}/{repo_id}"))
+            await asyncio.to_thread(
+                snapshot_download,
+                repo_id=repo_id,
+                repo_type="dataset",
+                local_dir=f"{DatasetsFolder.local_dir_}/{repo_id}"
+            )
         except(RepositoryNotFoundError):
             raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
                                     detail = f"Repository {repo_id} does not exist!")
