@@ -47,6 +47,18 @@ async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_cur
         "message" : "Dataset is downloaded successfully" 
         }
 
+@app.get("/datasets")
+async def get_info_of_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):
+
+    async def gen():
+        async for metadata in d.get_all_datasets():
+            yield json.dumps(metadata, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        gen(),
+        media_type="application/x-ndjson"
+    )
+
 
 @app.get("/dataset")
 async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)],

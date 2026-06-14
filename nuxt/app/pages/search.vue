@@ -4,12 +4,18 @@ definePageMeta({
 })
 
 import { gsap } from 'gsap';
-import { SiTensorflow, SiPytorch } from 'vue-icons-plus/si';
+import { SiTensorflow, SiPytorch, SiAkamai } from 'vue-icons-plus/si';
 import { GrLicense } from "vue-icons-plus/gr";
 import { VList } from "virtua/vue";
 import type { DropdownMenuItem } from "@nuxt/ui";
+import { toast } from 'vue-sonner';
+import ISO6391 from 'iso-639-1';
+import { meta } from 'zod/v4/core';
+import { ItemResizeObserver } from 'virtua/unstable_core';
+import { fi } from 'zod/v4/locales';
 
 interface ModelCardData {
+    type: 'models',
     id: number,
     name: string,
     language?: string[] | string,
@@ -27,8 +33,147 @@ interface ModelCardData {
     new_version?: string,
 }
 
-const searchError = ref(false);
-const models = ref<ModelCardData[]>([]);
+interface DatasetCardData {
+    type: 'datasets',
+    id: number,
+    name: string,
+    pretty_name: string,
+    language?: string[] | string,
+    size_categories?: string[],
+    source_datasets?: string[] | string,
+    license?: string[] | string,
+    tags?: string[] | string,
+    task_categories?: string[] | string,
+    task_ids?: string[] | string,
+}
+
+const Toast = useToast();
+const searchType = ref<'models' | 'datasets' | 'all'>('all')
+const allResults = ref<(ModelCardData | DatasetCardData)[]>([])
+
+const uniqueFilters = ref({
+    method: new Set(),
+    library_name: new Set(),
+    tags: new Set(),
+    language: new Set(),
+});
+
+const filter = ref({
+    method: new Set(),
+    library_name: new Set(),
+    tags: new Set(),
+    language: new Set(),
+});
+
+const currentData = computed(() => {
+    // console.log("filter: ", filter.value);
+
+    return allResults.value.filter(item => 
+        {
+            if (item.type == "datasets") {
+                
+                // ---- фильтр на языки ----
+                if (filter.value.language.size > 0) {
+                    let itemLanguages: string[] = [];
+
+                    if (Array.isArray(item.language)) {
+                        itemLanguages = item.language!
+                    } else if (item.language) {
+                        itemLanguages = [item.language]
+                    }
+    
+                    const hasCommonLang = itemLanguages.some(lang => {
+                        // console.log("lang: ", lang)
+                        // console.log("filter: ", filter.value.language)
+                        return filter.value.language.has(lang);
+                    });
+                    
+                    if (!hasCommonLang) return false;
+                }
+
+                // ---- фильтр на теги ----
+                if (filter.value.tags.size > 0) {
+                    let itemTags: string[] = [];
+
+                    if (Array.isArray(item.tags)) {
+                        itemTags = item.tags;
+                    } else {
+                        itemTags = [item.tags!];
+                    }
+    
+                    const hasCommonTags = itemTags.some(tag => {
+                        // console.log('lib: ', tag)
+                        // console.log('filter:', filter.value.tags);
+                        return filter.value.tags.has(tag);
+                    })
+    
+                    if (!hasCommonTags) return false;
+                }
+            } 
+            if (item.type == "models") {
+
+                // ---- фильтр на языки ----
+                if (filter.value.language.size > 0) {
+                    let itemLanguages: string[] = [];
+                    
+                    if (Array.isArray(item.language)) {
+                        itemLanguages = item.language!
+                    } else if (item.language) {
+                        itemLanguages = [item.language]
+                    }
+    
+                    const hasCommonLang = itemLanguages.some(lang => {
+                        // console.log("lang: ", lang)
+                        // console.log("filter: ", filter.value.language)
+                        return filter.value.language.has(lang);
+                    });
+                    
+                    if (!hasCommonLang) return false;
+                }
+
+                // ---- фильтр на библиотеки ----
+                if (filter.value.library_name.size > 0) {
+                    let itemLibraries: string[] = [];
+
+                    if (Array.isArray(item.library_name)) {
+                        itemLibraries = item.library_name;
+                    } else {
+                        itemLibraries = [item.library_name!];
+                    }
+    
+                    const hasCommonLibrary = itemLibraries.some(lib => {
+                        // console.log('lib: ', lib)
+                        // console.log('filter:', filter.value.library_name);
+                        return filter.value.library_name.has(lib);
+                    })
+    
+                    if (!hasCommonLibrary) return false;
+                }
+
+                // ---- фильтр на теги ----
+                if (filter.value.tags.size > 0) {
+                    let itemTags: string[] = [];
+
+                    if (Array.isArray(item.tags)) {
+                        itemTags = item.tags;
+                    } else {
+                        itemTags = [item.tags!];
+                    }
+    
+                    const hasCommonTags = itemTags.some(tag => {
+                        // console.log('lib: ', tag)
+                        // console.log('filter:', filter.value.tags);
+                        return filter.value.tags.has(tag);
+                    })
+    
+                    if (!hasCommonTags) return false;
+                }
+
+            }
+            return true;
+        }
+    )
+})
 
 const modes = ref<DropdownMenuItem[][]>([
     [
@@ -36,20 +181,29 @@ const modes = ref<DropdownMenuItem[][]>([
             label: 'Всё',
             type: 'link',
             onSelect: (e: Event) => {
-                console.log(e);
+                searchType.value = "all";
+                // console.log(e);
             }
         }
     ],
     [
         {
-            label: 'датасеты',
+            label: 'Датасеты',
             type: 'link',
+            onSelect: (e: Event) => {
+                searchType.value = "datasets";
+                // console.log(e);
+            }
         }
     ],
     [
         {
-            label: 'модели',
+            label: 'Модели',
             type: 'link',
+            onSelect: (e: Event) => {
+                searchType.value = "models";
+                // console.log(e);
+            }
         }
     ]
 ])
@@ -58,7 +212,7 @@ const languageItems = (lang: string[] | string): DropdownMenuItem[][] => {
     if (!lang) return [];
 
     const languages = Array.isArray(lang) ? lang : [lang];
-    const result: DropdownMenuItem[] = languages.map(l => ({ label: l }));
+    const result: DropdownMenuItem[] = languages.map(l => ({ label: ISO6391.getName(l) }));
     
     return [result]
 }
@@ -72,6 +226,18 @@ async function fetchModelsCards() {
     
     if (!response.body) return;
 
+    if (response.status != 200) {
+        Toast.add({
+                color: "error",
+                title: "Произошла ошибка при загрузке моделей",
+                icon: 'i-lucide-wifi-off',
+                ui: {
+                    description: 'whitespace-pre-line'
+                }
+            })  
+        return;
+    }
+
     const reader = response.body
                         .pipeThrough(new TextDecoderStream())
                         .getReader();
@@ -84,142 +250,227 @@ async function fetchModelsCards() {
         for (const line of lines) {
             if (line.trim()) {
                 const metadata = await JSON.parse(line) as ModelCardData;
+                
+                if (metadata.library_name != undefined || metadata.library_name != null) {
+                    uniqueFilters.value.library_name.add(metadata.library_name);
+                }
+
+                if (Array.isArray(metadata.tags)) {
+                    metadata.tags.forEach(item => uniqueFilters.value.tags.add(item))
+                } else if (metadata.tags != undefined || metadata.tags != null) {
+                    uniqueFilters.value.tags.add(metadata.tags);
+                }
+
+                if (Array.isArray(metadata.language)) {
+                    metadata.language.forEach(item => uniqueFilters.value.language.add(item))
+                } else if (metadata.language != undefined || metadata.language != null) {
+                    uniqueFilters.value.language.add(metadata.language);
+                }
+
                 metadata['id'] = id;
+                metadata['type'] = "models";
                 id++;
-                models.value.push(metadata)
-                console.log("METADATA\n", metadata as ModelCardData)
+                allResults.value.push(metadata)
+                // console.log("MODEL\n", metadata)
             }
         }
     }
 }
 
+async function fetchDatasetsCards() {
+    const response = await fetch(
+        "http://localhost:8002/datasets",
+        {
+            credentials: "include"
+        })
+
+    if (!response.body) return;
+    
+    if (response.status != 200) {
+        Toast.add({
+                color: "error",
+                title: "Произошла ошибка при загрузке датасетов",
+                icon: 'i-lucide-wifi-off',
+                ui: {
+                    description: 'whitespace-pre-line'
+                }
+            })  
+        return;
+    }
+
+    const reader = response.body
+                    .pipeThrough(new TextDecoderStream())
+                    .getReader();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        let id = 0;
+        const lines = value.split("\n");
+        for (const line of lines) {
+            if (line.trim()) {
+                const metadata = await JSON.parse(line) as DatasetCardData;
+                metadata['id'] = id;
+                metadata['type'] = "datasets";
+
+                if (Array.isArray(metadata.language)) {
+                    metadata.language.forEach(item => uniqueFilters.value.language.add(item))
+                } else if (metadata.language != undefined || metadata.language != null) {
+                    uniqueFilters.value.language.add(metadata.language);
+                }
+
+                id++;
+                allResults.value.push(metadata)
+                // console.log("DATASET\n", metadata)
+            }
+        }
+    }
+}
+
+function toggleLangButton(event) {
+    const langName = ISO6391.getCode(event.target.textContent).toLowerCase().trim();
+
+    if (filter.value.language.has(langName)) {
+        filter.value.language.delete(langName);
+    } else {
+        filter.value.language.add(langName);
+    }
+}
+
+function toggleMethodButton(event) {
+    const tags = event.target.textContent.toLowerCase().trim();
+    
+    if (filter.value.tags.has(tags)) {
+        filter.value.tags.delete(tags);
+    } else {
+        filter.value.tags.add(tags);
+    }
+}
+
+function toggleLibraryButton(event) {
+    const library_name = event.target.textContent.toLowerCase().trim();
+    
+    if (filter.value.library_name.has(library_name)) {
+        filter.value.library_name.delete(library_name);
+    } else {
+        filter.value.library_name.add(library_name);
+    }
+}
+
 onMounted(() => {
     fetchModelsCards();
+    fetchDatasetsCards();
+
+    console.log(allResults.value);
+    console.log("unique filters: ",uniqueFilters.value);
 })
 
 </script>
 <template>
-    <div class="flex w-full h-full flex-col flex-1">
-        
-        <div class="flex flex-col w-full gap-2 mt-20">
-            <span v-if="searchError" class="text-error m-auto">Тест</span>
-            <UInput placeholder="Поиск..." class="m-auto w-120" />
-        </div>
+    <div class="grid grid-rows-[10%_1fr] h-full">
 
-        <div class="h-screen flex flex-row pt-20 p-10 pb-0 gap-4">
+        <div class="h-screen grid grid-cols-[50%_50%] md:grid-cols-[30%_70%] sm:grid-cols-[40%_60%] transform transition-all duration-400">
             
-            <div class="flex flex-col h-screen w-[30%] ring ring-default shadow-sm">
-                <div class="flex flex-col w-full mt-4">
-                    <span class="text-medium self-center text-[1.3rem]">Фильтры</span>
-                    <USeparator orientation="horizontal" class="self-center w-[80%] h-3"/>
-                    <div class="flex self-center">
-                        <UDropdownMenu :items="modes">
-                            <UButton icon="i-lucide-menu" size="sm" class="flex-0 self-center" color="neutral" variant="outline"/>
-                        </UDropdownMenu >
-                        <span class="mt-4 mb-4">Режим поиска</span>
-                    </div>
-                    <span class="text-medium self-center mt-4 mb-4">Метод</span>
-                    <div class="flex flex-row gap-2 w-full justify-center content-center flex-wrap">
-                        <UButton 
+            <div class="flex flex-col h-fit sm:pr-10 sm:pl-10 md:pr-10 md:pl-10 transform transition-all duration-400">
+                    <span class="self-center m-2 text-[1.1rem]">Фильтры</span>
+                    <div class="flex flex-col flex-wrap p-5 gap-1 rounded-lg ring ring-default shadow-lg">
+
+                        <div class="flex">
+                            <UDropdownMenu :items="modes">
+                                <UButton icon="i-lucide-menu" size="sm" class="flex-0 self-center" color="neutral" variant="outline"/>
+                            </UDropdownMenu >
+                            <span class="ml-2 mt-4 mb-4">{{ searchType === "all" ? 'Всё' : searchType === "models" ? "Модели" : searchType === "datasets" ? "Датасеты" : "" }}</span>
+                        </div>
+                        
+                        <span class="mt-4 mb-4">Теги</span>
+                        <div class="flex lg:flex-row sm:flex-col gap-2 flex-wrap">
+                            <UButton
+                                v-for="tag in uniqueFilters.tags"
                                 variant="outline" 
-                                color="success"
+                                :color="filter.tags.has((tag as string).toLowerCase().trim()) ? 'success' : 'info'"
+                                size="sm"
+                                class="flex w-fit"
+                                @click="toggleMethodButton"
+                            >
+                            {{ tag as string }}
+                            </UButton>
+                        </div>
+                        <span class="mt-4 mb-4">Библиотеки</span>
+                    <div class="flex gap-2 flex-wrap">
+                        <div v-for="lib in uniqueFilters.library_name">
+                        
+                            <UButton v-if="(lib as string) == 'tensorflow'"
+                                variant="outline" 
+                                :color="filter.library_name.has((lib as string).toLowerCase().trim()) ? 'success' : 'info'"
                                 size="sm"
                                 class="flex"
                             >
-                                NER
-                        </UButton>
+                                <SiTensorflow class="w-4 h-4" />
+                                TensorFlow
+                            </UButton>
+                        
+                            <UButton v-else-if="lib == 'pytorch'"
+                                variant="outline" 
+                                :color="filter.library_name.has((lib as string).toLowerCase().trim()) ? 'success' : 'info'"
+                                size="sm"
+                                class="flex"
+                                @click="toggleLibraryButton"
+                            >
+                                <SiPytorch class="w-4 h-4" />
+                                PyTorch
+                            </UButton>
+
+                            <UButton v-else-if="lib == 'transformers' || lib == 'sentence-transformers'"
+                                variant="outline" 
+                                :color="filter.library_name.has((lib as string).toLowerCase().trim()) ? 'success' : 'info'"
+                                size="sm"
+                                class="flex"
+                                @click="toggleLibraryButton"
+                            >
+                                <img alt="Hugging Face's logo" class="w-4 h-4" src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg">
+                                {{ lib }}
+                            </UButton>
+
+                            <UButton v-else
+                                variant="outline" 
+                                :color="filter.library_name.has((lib as string).toLowerCase().trim()) ? 'success' : 'info'"
+                                size="sm"
+                                class="flex"
+                                @click="toggleLibraryButton"
+                            >
+                                {{ lib }}
+                            </UButton>
+                        </div>
                     </div>
-                    <span class="text-medium self-center mt-4 mb-4">Библиотеки</span>
-                    <div class="flex flex-row gap-2 w-full justify-center content-center flex-wrap">
-                        <UButton 
-                            variant="outline" 
-                            color="success"
+                    <div class="flex flex-col gap-2">
+                        <span class="mt-4 mb-4">Локализация</span>
+                        <div class="flex gap-2 flex-wrap">
+                            <UButton
+                            v-for="lang in uniqueFilters.language" 
+                            variant="soft" 
+                            :color="filter.language.has(lang as string) ? 'success' : 'info'"
                             size="sm"
                             class="flex"
-                        >
-                            <SiTensorflow />
-                            TensorFlow
-                        </UButton>
-                        <UButton 
-                            variant="outline" 
-                            color="success"
-                            size="sm"
-                            class="flex"
-                        >
-                            <SiPytorch />
-                            PyTorch
-                        </UButton>
+                            @click="toggleLangButton"
+                            >{{ ISO6391.getName(lang as string) }}</UButton>
+                        </div>
                     </div>
-                    <span class="text-medium self-center mt-4 mb-4">Локализация</span>
-                    <div class="flex flex-row gap-2 w-full justify-center content-center flex-wrap">
-                        <UButton 
-                            variant="subtle" 
-                            color="info"
-                            size="sm"
-                            class="flex"
-                        >
-                            English
-                        </UButton>
-                        <UButton 
-                            variant="subtle" 
-                            color="info"
-                            size="sm"
-                            class="flex"
-                        >
-                            Spanish
-                        </UButton>
-                        <UButton 
-                            variant="subtle" 
-                            color="info"
-                            size="sm"
-                            class="flex"
-                        >
-                            Greek
-                        </UButton>
-                        <UButton 
-                            variant="subtle" 
-                            color="info"
-                            size="sm"
-                            class="flex"
-                        >
-                            Russian
-                        </UButton>
-                        <UButton 
-                            variant="subtle" 
-                            color="info"
-                            size="sm"
-                            class="flex"
-                        >
-                            Italian
-                        </UButton>
-                        <UButton 
-                            variant="subtle" 
-                            color="info"
-                            size="sm"
-                            class="flex"
-                        >
-                            Chinese
-                        </UButton>
-                        <UButton 
-                            variant="subtle" 
-                            color="info"
-                            size="sm"
-                            class="flex"
-                        >
-                            Japanese
-                        </UButton>
                     </div>
-                </div>
             </div>
 
-            <VList :data="models" class="mt-0 flex flex-1 flex-col items-center p-3 w-full ring ring-default shadow-sm" #default="{ item, index }">
-                
-                <div class="flex flex-col rounded-lg gap-4 ring ring-default shadow-sm p-4 h-35 w-full mb-3">
+<VList :data="currentData" class="flex h-full overflow-auto p-3 ring ring-default shadow-sm" #default="{ item, index }">
+    
+    <div class="flex flex-col rounded-lg gap-4 ring ring-default shadow-sm p-4 h-auto w-full mb-3">
                 <div class="flex flex-row">
                     <div class="flex flex-row gap-4">
-                        <span class="flex self-center">{{ item["name"] }}</span>
-                        <div class="flex flex-row p-1 self-center rounded-lg ring ring-primary/50 shadow-sm">
-                            <span class="flex font-bold self-center text-xs">NER</span>
+                        <UIcon v-if='item["type"] == "datasets"' name="i-lucide-library" class="size-5" />
+                        <UIcon v-if='item["type"] == "models"' name="i-lucide-astroid" class="size-5" />
+                        <ULink v-if='item["type"] == "datasets"' as="button" :to="'/dataset/' + item['name']" class="flex self-center">{{ item["name"] }}</ULink>
+                        <ULink v-if='item["type"] == "models"' as="button" class="flex self-center">{{ item["name"] }}</ULink>
+                        <div v-if="item['type'] == 'datasets'" v-for="tag in item['task_categories']">
+                            <div class="flex flex-row p-1 self-center rounded-lg ring ring-primary/50 shadow-sm">
+                                <span class="flex font-bold self-center text-xs">{{ tag }}</span>
+                            </div>
                         </div>
                         <div v-if="item['library_name']?.toLowerCase() == 'transformers'" class="flex flex-row self-center p-1 rounded-lg ring ring-primary/50 shadow-sm">
                             <UTooltip arrow :text="item['library_name']">
@@ -248,22 +499,22 @@ onMounted(() => {
                         <div v-else-if="item['library_name'] !== null && item['library_name'] !== undefined" class="flex flex-row self-center p-1 rounded-lg ring ring-primary/50 shadow-sm">
                             <span class="text-xs">{{ item['library_name'] }}</span>
                         </div>
-                        <UDropdownMenu 
+                        <UDropdownMenu v-if="item['language']"
                             arrow 
                             size="xs" 
                             :items="languageItems(item['language'] ?? '')"
                             :ui="{ content: 'min-w-fit', item: 'whitespace-nowrap' }"
                             >
-                            <UButton variant="outline" size="xs">
-                            Языки
-                            </UButton>
+                                <UButton variant="outline" size="xs">
+                                    Языки
+                                </UButton>
                         </UDropdownMenu>
                     </div>
                 </div>
                 <div class="h-full w-full flex flex-col">
-                    <div class="flex gap-2 mb-2">
-                        <GrLicense class="w-4 h-4"/>
-                        <span class="flex text-md">{{ item['license'] }}</span>
+                    <div class="flex items-center text-center gap-2 mb-2">
+                        <GrLicense class="flex w-4 h-4"/>
+                        <span class="flex text-center text-md">{{ Array.isArray(item['license']) ? item['license'][0] : item['license'] }}</span>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <UBadge v-for="tag in item['tags']" color="neutral" variant="outline" :label="tag"/>

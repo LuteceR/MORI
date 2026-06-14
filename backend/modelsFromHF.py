@@ -105,6 +105,7 @@ class ModelsFolder:
         except Exception as err:
             print("ERROR\n", err)
             raise
+        
     async def create_model(self, orig_model_id: int = None):
         """
         Загружает модель с huggingface и создает запись в бд

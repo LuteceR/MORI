@@ -56,8 +56,11 @@ const editorLanguage = ref('json');
 const openSidebarMarks = ref(false);
 const openedFile = ref('');
 const eventTarget = ref<HTMLElement | null>(null);
-
 const choosenKeyForMarks = ref('');
+const route = useRoute();
+
+const name = route.params.name as string;
+const dataset = route.params.dataset as string;
 
 const pieData = computed(() => {
     const map = new Map<string, number>();
@@ -160,17 +163,6 @@ const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
     if ((e.ctrlKey || e.metaKey) && 'key' in e && e.key?.toLowerCase() === 's') {
         e.preventDefault();
         
-        if (repo_id.value == "") {
-            toast.add({
-                    color: "error",
-                    title: "Не выбран датасет",
-                    icon: 'i-lucide-ban',
-                    ui: {
-                        description: 'whitespace-pre-line'
-                    }
-                })
-            return;
-        }
         if (openedFile.value == "") {
             toast.add({
                     color: "error",
@@ -191,7 +183,7 @@ const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
             },
             credentials: "include",
             body: JSON.stringify({
-                dataset: repo_id.value,
+                dataset: name + "/" + dataset,
                 filename: openedFile.value,
                 content: textarea_value.value,
             }),
@@ -531,7 +523,7 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                             "http://localhost:8002/file_from_dataset?" +
                             new URLSearchParams(
                             {
-                                dataset: repo_id.value,
+                                dataset: name + "/" + dataset,
                                 filepath: currentPath + item.label,
                             }),
                             {
@@ -579,8 +571,6 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
 const RepoError = ref<string | null>(null);
 
 async function request() {
-    if (repo_id.value == "") return
-
     loading.value = true;
     
     try {
@@ -588,7 +578,7 @@ async function request() {
             method: 'GET',
             credentials: "include",
             query:  {
-                dataset: repo_id.value
+                dataset: name + "/" + dataset
             }
         })
 
@@ -682,6 +672,12 @@ const itemsSME = ref([" ", 'PERSON', 'ORG', 'LOC', 'FACILITY', 'REFS',
 
 onMounted(() => {
     window.addEventListener('keydown', saveChanges);
+    request();
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', saveChanges);
+    request();
 })
 </script>
 
@@ -711,23 +707,21 @@ onMounted(() => {
             'absolute top-(--ui-header-height) bottom-0 h-[calc(100%-var(--ui-header-height))]'
         }"
     >
-        <template #header>
-            <!-- <UUser v-if="!loading" :name="repo_id_header" size="xl" class="text-default"/> -->
-            <span v-if="!loading" class="text-default font-medium">{{ repo_id_header }}</span>
-            <USkeleton v-if="loading" class="h-6 w-45" />
-        </template>
-
-        <h1 class="">Файлы</h1>
-        <USeparator />
-
-        <UTree
-            :items="items"
-            orientation="vertical"
-            :ui="{ 
-                link: 'p-1.5 overflow-hidden',
-                listWithChildren: 'ml-3',
-            }"
-        />
+        <div class="flex h-[5%] w-auto justify-center items-center">
+            <h1>Файлы</h1>
+        </div>
+        <!-- <USeparator /> -->
+        
+        <div class="p-2 rounded-lg ring ring-default shadow-lg">
+            <UTree
+                :items="items"
+                orientation="vertical"
+                :ui="{
+                    link: 'p-1.5 overflow-hidden',
+                    listWithChildren: 'ml-3',
+                }"
+            />
+        </div>
     </USidebar>
         
     <div
@@ -739,8 +733,8 @@ onMounted(() => {
     >
     
     <UContainer
-        class="w-full p-5 h-[calc(var(--ui-header-height)*1.4)]! items-center 
-        max-w-none flex transform transition-all duration-200"
+        class="flex w-full p-5 h-auto items-center 
+        max-w-none transform transition-all duration-200"
     >
     
         <UButton
@@ -752,20 +746,7 @@ onMounted(() => {
             @click="openSidebar = !openSidebar"
         />
         
-        <UFormField class="sm:ml-10 mb-auto ml-2 self-center justify-center">
-            <div class="flex flex-row">
-                <UInput
-                    v-model="repo_id"
-                    :color="RepoError ? 'error' : 'neutral'" 
-                    variant="subtle"
-                    size="lg"
-                    class="w-50 transform transition-all duration-200"
-                    placeholder="user/dataset"
-                    @keydown.enter="request"
-                />
-                <span v-if='RepoError' class="text-error ml-2 self-center text-md">{{ RepoError }}</span>
-            </div>
-        </UFormField>
+        <ULink class="ml-4 flex justify-center self-center">{{ route.params.name }}/{{ route.params.dataset }}</ULink>
         
         <UButton
             v-if="IsPaginator"

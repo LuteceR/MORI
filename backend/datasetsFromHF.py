@@ -1,6 +1,6 @@
 import aiofiles
 from fastapi import FastAPI, HTTPException, status, Response
-from huggingface_hub import snapshot_download
+from huggingface_hub import snapshot_download, DatasetCard
 from huggingface_hub.utils import (
     RepositoryNotFoundError,
     RevisionNotFoundError,
@@ -30,6 +30,19 @@ class DatasetsFolder:
         """
         return await database.fetch_all(datasets.select())
 
+    async def get_all_datasets(self):
+        query = datasets.select()
+        res = await database.fetch_all(query)
+        try:
+            for dataset in res:
+                card = DatasetCard.load(dataset["name"])
+                metadata = card.data.to_dict()
+                metadata['name'] = dataset["name"]
+                print(metadata)
+                yield metadata
+        except Exception as err:
+            print("ERROR\n", err)
+            raise
 
     async def get_labels_list(self, dataset: str, filepath: str, ner_key: str = "ner") -> set:
         """

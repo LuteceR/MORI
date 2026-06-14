@@ -36,6 +36,7 @@ useSeoMeta({
         <NuxtLink to="/">
           <AppLogo />
         </NuxtLink>
+        <UInput color='info' class='lg:ml-4 sm:ml-4 transform transition-all duration-400 lg:w-90 md:w-70 sm:w-60' icon="i-lucide-search" size="md" variant="outline" placeholder="Поиск..." />
       </template>
       <template #right>
         <UColorModeSelect />
