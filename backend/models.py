@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, TIMESTAMP, TEXT, Float
-
+from sqlalchemy.dialects.postgresql import JSONB
 metadata = MetaData()
 
 users = Table(
@@ -77,7 +77,7 @@ metrics = Table(
     Column("id_datasets", Integer, ForeignKey("datasets.id_datasets"), nullable=False),
     Column("id_models", Integer, ForeignKey("models.id_models"), nullable=False),
     Column("date", TIMESTAMP, nullable=False),
-    Column("details", TEXT, nullable=True),
+    Column("details", JSONB, nullable=True),
 )
 
 models_snapshots = Table(

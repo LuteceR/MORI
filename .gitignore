@@ -17,3 +17,4 @@ backend/alembic
 nuxt/pnpm-lock.yaml
 .vscode
 backend/routers/__pycache__
+backend/services/RUN_BACKEND.bat

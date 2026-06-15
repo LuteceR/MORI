@@ -321,7 +321,7 @@ class ModelsFolder:
         tokenizer = AutoTokenizer.from_pretrained(self.full_path)
         model = AutoModelForTokenClassification.from_pretrained(self.full_path)
         nlp = pipeline("token-classification", model=model, tokenizer=tokenizer, ignore_labels=list(model_diff)) 
-        # ignore_labels - не выдавать в результате слова с этими метками, aggregation_strategy='none', 'simple', 'first', 'average', 'max'
+        # ignore_labels - не выдавать в результате слова с этими метками
 
         json_data = await dataset.read_file(dataset_repo, filepath)
         data = []
@@ -342,7 +342,7 @@ class ModelsFolder:
             # print(results)
             # print()
             results.append(answer)
-        metrics = await calcMetrics(data, results, text_key)
+        metrics = await calcMetrics(data, results, text_key, model_labels)
         await storeResults(metrics, project_id, db_dataset.id_datasets, db_model.id_models)
         return metrics
 

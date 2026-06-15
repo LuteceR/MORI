@@ -38,20 +38,12 @@ interface Metric {
   name: string, // Model
   name_1: string, // Dataset
   date: string,
-  details: Array<MetricDetails>,
   metrics_data: Array<MetricResult>,
 }
 
 interface MetricResult {
   name: string,
   value: number
-}
-
-interface MetricDetails {
-  word_id: number,
-  words: Array<string>,
-  true_labels: Array<string>,
-  pred_labels: Array<string>
 }
 
 interface ProjectResponse {
@@ -355,7 +347,7 @@ async function runModel() {
             <UFormField label="Путь до файла">
               <UInput class="mb-4 w-[85%]" v-model="runFilePath" placeholder="test.jsonl"/>
             </UFormField>
-            <UFormField label="Json-ключ текста">
+            <UFormField label="Json-ключ в файле, где хранится текст">
               <UInput class="mb-4 w-[85%]" v-model="runWordsKey" placeholder="words"/>
             </UFormField>
             <UFormField>
@@ -410,14 +402,14 @@ async function runModel() {
           @click="" 
           disabled
         />
-      </div>
-      <UScrollArea>
-        <div v-if="isModelRunning" class="w-full h-20 shrink-0">
+        <div v-if="isModelRunning" class="w-full h-20 shrink-0 mt-2">
           <div class="flex items-center">
             <UButton size="lg" variant="ghost" color="neutral" leadingIcon='i-lucide-shell' class="animate-spin"/>
             <span class="ml-4">Модель расчитывает ответы...</span>
           </div>
         </div>
+      </div>
+      <UScrollArea>
         <div v-if="thisMetrics.length === 0" class="text-center h-dvh">
           Вы ещё не запускали модели в этом проекте
         </div>
@@ -435,7 +427,7 @@ async function runModel() {
               Метрики  
               <div class="w-full ml-4">
                 <div v-for="m_result in metric.metrics_data">
-                  <div class="w-full"> {{ m_result.name }}: {{ m_result.value }} </div>
+                  <div class="w-full"> {{ m_result.name }}: {{ m_result.value % 1 == 0? m_result.value:  m_result.value.toFixed(4)}} </div>
                 </div>
               </div>
             </div>

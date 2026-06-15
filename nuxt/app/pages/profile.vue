@@ -182,7 +182,7 @@ onMounted(requestProjects)
         >
         <template #default>
             <UFieldGroup orientation="horizontal" class="h-10 w-full">
-                <UButton color="info" variant="outline" icon="i-lucide-pencil" label="Редактировать" class="w-full" :to="`/project/${project.id_projects}`"/>
+                <UButton color="info" variant="outline" icon="i-lucide-pencil" label="Редактировать" class="w-full" :to="`/project/project/${project.id_projects}`"/>
                 <UButton @click='isOpen = true;selectedProject = project.name' color="error" variant="outline" icon="i-lucide-trash" label="Удалить" class="w-full" />
             </UFieldGroup>
         </template>

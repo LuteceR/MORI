@@ -76,11 +76,10 @@ async def upload_project_file(current_user: Annotated[userLogin, Depends(get_cur
         "message": "Project's file was uploaded successfully"
     }
 
-
+# not used
 @app.get("/project_data")
-async def get_main_(username: str,
-                                id_projects: int, 
-                                request: Request):
+async def get_main_data(username: str,
+                        id_projects: int):
     user = UserStorageService(username)
     result = await user.get_project_data(username, id_projects)
 
