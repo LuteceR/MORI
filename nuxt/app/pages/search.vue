@@ -113,7 +113,7 @@ const currentData = computed(() => {
                     const hasCommonLang = itemLanguages.some(lang => {
                         // console.log("lang: ", lang)
                         // console.log("filter: ", filter.value.language)
-                        return filter.value.language.has(lang);
+                        return filter.value.language.has(lang.toLowerCase().trim());
                     });
                     
                     if (!hasCommonLang) return false;
@@ -130,9 +130,9 @@ const currentData = computed(() => {
                     }
     
                     const hasCommonTags = itemTags.some(tag => {
-                        // console.log('lib: ', tag)
+                        // console.log('tag: ', tag)
                         // console.log('filter:', filter.value.tags);
-                        return filter.value.tags.has(tag);
+                        return filter.value.tags.has(tag.toLowerCase().trim());
                     })
     
                     if (!hasCommonTags) return false;
