@@ -359,6 +359,12 @@ async function fetchDatasetsCards() {
                     uniqueFilters.value.language.add(metadata.language);
                 }
 
+                if (Array.isArray(metadata.tags)) {
+                    metadata.tags.forEach(item => uniqueFilters.value.tags.add(item))
+                } else if (metadata.tags != undefined || metadata.tags != null) {
+                    uniqueFilters.value.tags.add(metadata.tags);
+                }
+
                 id++;
                 allResults.value.push(metadata)
                 // console.log("DATASET\n", metadata)
