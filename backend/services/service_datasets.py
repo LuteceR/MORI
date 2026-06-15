@@ -47,7 +47,7 @@ async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_cur
         "message" : "Dataset is downloaded successfully" 
         }
 
-@app.get("/datasets")
+@app.get("/datasets-info")
 async def get_info_of_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):
 
     async def gen():

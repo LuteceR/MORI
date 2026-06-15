@@ -476,7 +476,9 @@ async function runModel() {
       <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none border-gray-500 rounded-lg border">
         <UCard :ui="{ body: 'p-3 sm:p-3' }" v-for="dataset in thisDatasets" :key="dataset.id_datasets" class="m-4">
           <span class="font-medium flex justify-between">
-            {{ dataset.name.split('/')[1] || dataset.name }}
+            <ULink  as="button" :to="'/dataset/' + dataset.name" class="flex self-center">
+              {{ dataset.name.split('/')[1] || dataset.name }}
+            </ULink>
             <UButton 
                 icon="i-lucide-x" 
                 variant="ghost" 

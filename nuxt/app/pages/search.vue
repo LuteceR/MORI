@@ -327,7 +327,7 @@ async function fetchModelsCards() {
 
 async function fetchDatasetsCards() {
     const response = await fetch(
-        "http://localhost:8002/datasets",
+        "http://localhost:8002/datasets-info",
         {
             credentials: "include"
         })
