@@ -92,6 +92,10 @@ const currentData = computed(() => {
         {
             if (item.type == "datasets") {
 
+                if (searchType.value == "models") {
+                    return false;
+                }
+
                 // ---- фильтр по названию ----
                 if (filter.value.searchFilter != '') {
                     if (item.name.includes(filter.value.searchFilter)) {
@@ -143,6 +147,10 @@ const currentData = computed(() => {
                 }
             } 
             if (item.type == "models") {
+                
+                if (searchType.value == "datasets") {
+                    return false;
+                }
 
                 // ---- фильтр по названию ----
                 if (filter.value.searchFilter != '') {
