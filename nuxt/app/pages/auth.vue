@@ -54,13 +54,11 @@ const onSubmit = handleSubmit(async (data) => {
             navigateTo('/')
         }
     } catch (err: any) {
-        if (err.response.status == 401) {
-            toast.add({
-                title: "Ошибка входа",
-                description: "Неправильный логин или пароль",
-                icon: 'i-lucide-log-in',
-            })
-        }
+        toast.add({
+            title: "Ошибка входа",
+            description: "Неправильный логин или пароль",
+            icon: 'i-lucide-log-in',
+        })
     }
 })
 

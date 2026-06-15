@@ -90,7 +90,6 @@ app = FastAPI(title="MORI auth_service",
             description="✨ МОРИ - машинное обучение разворачивание и исследование ✨", 
             version="0.1.0")
 
-metadata.create_all(engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -99,6 +98,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+metadata.create_all(engine)
 
 @app.on_event("startup")
 async def startup():
