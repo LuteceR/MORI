@@ -625,15 +625,15 @@ const o = ref(false);
 
 const tabs = [
     {
-        label: 'эдитор',
+        label: 'Текстовый редактор',
         slot: 'editor',
     },
     {
-        label: 'студия',
+        label: 'Csv-таблица',
         slot: 'studio',
     },
     {
-        label: 'метки',
+        label: 'Интерактивный редактор',
         slot: 'marks',
     },
 ]
