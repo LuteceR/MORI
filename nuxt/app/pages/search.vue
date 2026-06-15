@@ -13,6 +13,7 @@ import ISO6391 from 'iso-639-1';
 import { meta } from 'zod/v4/core';
 import { ItemResizeObserver } from 'virtua/unstable_core';
 import { fi } from 'zod/v4/locales';
+import { string } from 'zod';
 
 interface ModelCardData {
     type: 'models',
@@ -50,6 +51,24 @@ interface DatasetCardData {
 const Toast = useToast();
 const searchType = ref<'models' | 'datasets' | 'all'>('all')
 const allResults = ref<(ModelCardData | DatasetCardData)[]>([])
+const route = useRoute();
+
+const highlightMatch = (text: string, search: string) => {
+    if (!search || !text) return [{ text, highlight: false }]
+
+    const ind = text.toLowerCase().indexOf(search.toLowerCase());
+    if (ind === -1) return [{ text, highlight: false }]
+
+    const before = text.slice(0, ind);
+    const match = text.slice(ind, ind + search.length);
+    const after = text.slice(ind + search.length);
+
+    return [
+        { text: before, highlight: false },
+        { text: match, highlight: true },
+        { text: after, highlight: false }
+    ]
+}
 
 const uniqueFilters = ref({
     method: new Set(),
@@ -59,6 +78,7 @@ const uniqueFilters = ref({
 });
 
 const filter = ref({
+    searchFilter: '',
     method: new Set(),
     library_name: new Set(),
     tags: new Set(),
@@ -71,7 +91,15 @@ const currentData = computed(() => {
     return allResults.value.filter(item => 
         {
             if (item.type == "datasets") {
-                
+
+                // ---- фильтр по названию ----
+                if (filter.value.searchFilter != '') {
+                    if (item.name.includes(filter.value.searchFilter)) {
+                        return true
+                    }
+                    return false
+                }
+
                 // ---- фильтр на языки ----
                 if (filter.value.language.size > 0) {
                     let itemLanguages: string[] = [];
@@ -111,6 +139,14 @@ const currentData = computed(() => {
                 }
             } 
             if (item.type == "models") {
+
+                // ---- фильтр по названию ----
+                if (filter.value.searchFilter != '') {
+                    if (item.name.includes(filter.value.searchFilter)) {
+                        return true
+                    }
+                    return false
+                }
 
                 // ---- фильтр на языки ----
                 if (filter.value.language.size > 0) {
@@ -360,6 +396,10 @@ function toggleLibraryButton(event) {
 onMounted(() => {
     fetchModelsCards();
     fetchDatasetsCards();
+    
+    if (route.query.search != undefined || route.query.search != null) {
+        filter.value.searchFilter = route.query.search as string;
+    }
 
     console.log(allResults.value);
     console.log("unique filters: ",uniqueFilters.value);
@@ -372,8 +412,12 @@ onMounted(() => {
         <div class="h-screen grid grid-cols-[50%_50%] md:grid-cols-[30%_70%] sm:grid-cols-[40%_60%] transform transition-all duration-400">
             
             <div class="flex flex-col h-fit sm:pr-10 sm:pl-10 md:pr-10 md:pl-10 transform transition-all duration-400">
+                    
                     <span class="self-center m-2 text-[1.1rem]">Фильтры</span>
+                    
                     <div class="flex flex-col flex-wrap p-5 gap-1 rounded-lg ring ring-default shadow-lg">
+
+                        <UInput v-model="filter.searchFilter" color='info' class='transform transition-all duration-400 w-full' icon="i-lucide-search" size="md" variant="outline" placeholder="Поиск..." />
 
                         <div class="flex">
                             <UDropdownMenu :items="modes">
@@ -465,8 +509,22 @@ onMounted(() => {
                     <div class="flex flex-row gap-4">
                         <UIcon v-if='item["type"] == "datasets"' name="i-lucide-library" class="size-5" />
                         <UIcon v-if='item["type"] == "models"' name="i-lucide-astroid" class="size-5" />
-                        <ULink v-if='item["type"] == "datasets"' as="button" :to="'/dataset/' + item['name']" class="flex self-center">{{ item["name"] }}</ULink>
-                        <ULink v-if='item["type"] == "models"' as="button" class="flex self-center">{{ item["name"] }}</ULink>
+                        <ULink v-if='item["type"] == "datasets"' as="button" :to="'/dataset/' + item['name']" class="flex self-center">
+                            <span>
+                                <template v-for="(part, idx) in highlightMatch(item.name, filter.searchFilter)" :key="idx">
+                                    <span v-if="part.highlight" class="marker">{{ part.text }}</span>
+                                    <span v-else>{{ part.text }}</span>
+                                </template>
+                            </span>
+                        </ULink>
+                        <ULink v-if='item["type"] == "models"' as="button" class="flex self-center">
+                            <span>
+                                <template v-for="(part, idx) in highlightMatch(item.name, filter.searchFilter)" :key="idx">
+                                    <span v-if="part.highlight" class="marker">{{ part.text }}</span>
+                                    <span v-else>{{ part.text }}</span>
+                                </template>
+                            </span>
+                        </ULink>
                         <div v-if="item['type'] == 'datasets'" v-for="tag in item['task_categories']">
                             <div class="flex flex-row p-1 self-center rounded-lg ring ring-primary/50 shadow-sm">
                                 <span class="flex font-bold self-center text-xs">{{ tag }}</span>
