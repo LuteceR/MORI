@@ -629,7 +629,7 @@ const tabs = [
         slot: 'editor',
     },
     {
-        label: 'Csv-таблица',
+        label: 'CSV-таблица',
         slot: 'studio',
     },
     {
