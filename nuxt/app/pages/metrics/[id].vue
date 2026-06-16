@@ -42,19 +42,25 @@ function convertToFormat(error_line: ErrorLine) {
 
 </script>
 <template>
-    <div class="flex justify-between items-end">
-        <div class="max-w-110">
-            <div class="w-full"> Модель {{ details.name }} </div>
-            <div class="w-full"> Датасет {{ details.name_1 }} </div>
-            <div class="w-full"> Дата запуска {{ details.date }} </div>
-            Метрики  
-            <div class="w-full ml-4">
-                <div v-for="label in Object.keys(details.per_label_accuracy)">
-                    <div class="w-full">{{label}}: {{ details.per_label_accuracy[label]?.toFixed(4)  }}</div>
+    <div class="flex justify-between items-end h-full w-full">
+        <div class="flex self-center justify-center m-auto max-w-[80%]">
+            <div>
+                <span>Модель</span>
+                <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg">  {{ details.name }} </div>
+                <span>Датасет</span>
+                <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg"> Датасет {{ details.name_1 }} </div>
+                <span>Дата запуска</span>
+                <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg"> Дата запуска {{ details.date }} </div>
+                <span>Метрики</span>
+                <div class="w-full ml-4 p-5 gap-1 rounded-lg ring-default shadow-lg">
+                    <div v-for="label in Object.keys(details.per_label_accuracy)">
+                        <div class="w-full">{{label}}: {{ details.per_label_accuracy[label]?.toFixed(4)  }}</div>
+                    </div>
                 </div>
             </div>
-            Ошибки модели  
-            <div class="container mx-auto p-4">
+            
+            <div class="container mx-auto p-4 max-w-[60%]">
+                Ошибки модели  
                 <div 
                 v-for="(error_line, index) in details.error_lines" 
                 :key="index"
@@ -69,27 +75,28 @@ function convertToFormat(error_line: ErrorLine) {
                         v-for="(word, wordIndex) in error_line.words"
                         :key="wordIndex"
                         class="relative inline-block"
-                    >
+                    >   <UPopover>
                         <div :class="[
                                 'px-2 py-1 rounded relative group',
                                 wordIndex === error_line.word_id 
                                 ? 'border-2 border-red-500' 
                                 : 'border'
                             ]">
-                        <span class="text-sm">{{ word }}</span>
+                            <span class="text-sm">{{ word }}</span>
                         </div>
                         
-                        <!-- Метки над словом (показываем при наведении или всегда) -->
-                        <div class="absolute -top-8 left-0 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                            <div class="flex gap-1">
-                                <span class="px-1 py-0.5 bg-green-100 text-green-800 rounded">
-                                true: {{ error_line.true_labels[wordIndex] }}
-                                </span>
-                                <span class="px-1 py-0.5 bg-blue-100 text-blue-800 rounded">
-                                pred: {{ error_line.pred_labels[wordIndex] }}
-                                </span>
-                            </div>
-                        </div>
+                        
+                            <template #content>
+                                <div class="flex gap-1">
+                                    <span class="px-1 py-0.5 bg-green-100 text-green-800 rounded">
+                                    pred: {{ error_line.true_labels[wordIndex] }}
+                                    </span>
+                                    <span class="px-1 py-0.5 bg-blue-100 text-blue-800 rounded">
+                                    true: {{ error_line.pred_labels[wordIndex] }}
+                                    </span>
+                                </div>
+                            </template>
+                        </UPopover>
                     </div>
                     </div>
                 </div>

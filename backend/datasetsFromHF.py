@@ -33,16 +33,17 @@ class DatasetsFolder:
     async def get_all_datasets(self):
         query = datasets.select()
         res = await database.fetch_all(query)
-        try:
-            for dataset in res:
+        
+        for dataset in res:
+            try:
                 card = DatasetCard.load(dataset["name"])
                 metadata = card.data.to_dict()
                 metadata['name'] = dataset["name"]
                 print(metadata)
                 yield metadata
-        except Exception as err:
-            print("ERROR\n", err)
-            raise
+            except Exception as err:
+                print("ERROR\n", err)
+
 
     async def get_labels_list(self, dataset: str, filepath: str, ner_key: str = "ner") -> set:
         """
