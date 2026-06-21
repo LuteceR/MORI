@@ -27,3 +27,6 @@ class ProjectCreate(BaseModel):
 
 class ProjectDelete(BaseModel):
     project_name: str
+
+class ModelName(BaseModel):
+    model_name: str

@@ -16,6 +16,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { object } from 'zod';
 import Chart from 'primevue/chart';
 import { gsap } from 'gsap';
+import { VList } from "virtua/vue";
 
 type DatasetResponse = {
     dataset: string,
@@ -51,7 +52,7 @@ const pageSize = 20;
 const tab = ref();
 const IsPaginator = ref(false);
 let reader: ReadableStreamDefaultReader | null = null;
-const toast = useToast();
+const Toast = useToast();
 const editorLanguage = ref('json');
 const openSidebarMarks = ref(false);
 const openedFile = ref('');
@@ -164,7 +165,7 @@ const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
         e.preventDefault();
         
         if (openedFile.value == "") {
-            toast.add({
+            Toast.add({
                     color: "error",
                     title: "Не выбран файл",
                     icon: 'i-lucide-ban',
@@ -190,7 +191,7 @@ const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
         }).then((response) => {
             // console.log(response)
             if (response.status != 200) {
-                toast.add({
+                Toast.add({
                     color: "error",
                     title: "Произошла ошибка!",
                     description: `Статус: ${response.status}\n${response.statusText}`,
@@ -202,7 +203,7 @@ const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
                 return;     
             }
             if (response.status == 200) {
-                toast.add({
+                Toast.add({
                     color: "success",
                     title: "Изменения сохранены!",
                     icon: 'i-lucide-save',
@@ -262,7 +263,7 @@ function updateValue(event, array : string[]) {
 
     if (value1Input.value || value2Input.value || value3Input.value) {
         if ([...set].includes(part)) {
-            toast.add({
+            Toast.add({
                 color: "error",
                 title: "Данная метка уже существует",
                 ui: {
@@ -539,7 +540,7 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                                     processingMarks(item.label!);
                                     processingTable(item.label!);
                                     
-                                    // toast.add({
+                                    // Toast.add({
                                     //     title: "Файл полностью загружен!",
                                     //     icon: 'i-lucide-wifi',
                                     // })
@@ -551,7 +552,7 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                                 return reader?.read().then(processText);
                             });
                         }).finally(() => {
-                            toast.add({
+                            Toast.add({
                                         title: "Файл полностью загружен!",
                                         icon: 'i-lucide-wifi',
                                     })
@@ -838,7 +839,7 @@ onUnmounted(() => {
 
                 </div>
             <USeparator class="mt-2"/>
-                <div class="flex flex-wrap overflow-y-auto max-h-full gap-6 p-3 whitespace-normal break-words"
+                <div class="flex flex-wrap overflow-y-auto max-h-full gap-6 p-3 whitespace-normal wrap-break-word"
                 >
                 <UContextMenu
                     v-model:open="openCM"

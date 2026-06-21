@@ -39,9 +39,9 @@ d = DatasetsFolder()
 
 @app.post("/dataset")
 async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
-                              dataset_repo: str):
+                              repo_id: str):
     
-    await d.download_dataset(dataset_repo)
+    await d.download_dataset(repo_id)
     
     return { 
         "message" : "Dataset is downloaded successfully" 
@@ -103,6 +103,10 @@ async def get_dataset_labels_list(current_user: Annotated[userLogin, Depends(get
                                   ner_key: str):
     return await d.get_labels_list(dataset, filename, ner_key)
 
+@app.get('/get_dataset_info')
+async def get_metadata_of_dataset(current_user: Annotated[userLogin, Depends(get_current_user)],
+                                repo_id: str):
+    return await d.get_dataset_readme_data(repo_id)
 
 @app.get("/datasets")
 async def get_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):
@@ -152,3 +156,11 @@ async def save_file_changes(current_user: Annotated[userLogin, Depends(get_curre
     return { 
         "status" : "success"
         }
+
+@app.delete('/dataset')
+async def dataset(current_user: Annotated[userLogin, Depends(get_current_user)],
+                repo_id: str):
+    await d.delete_dataset(repo_id)
+    return {
+        "status": "dataset deleted successfully"
+    }

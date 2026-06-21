@@ -36,12 +36,18 @@ async def shutdown():
 
 @app.post("/model")
 async def download_model_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
-                            model_repo: str):
-    m = ModelsFolder(model_repo)
+                            repo_id: str):
+    m = ModelsFolder(repo_id)
     await m.create_model()
     return { 
         "message" : "Model is downloaded successfully" 
         }
+
+@app.get('/get_model_info')
+async def get_metadata_of_model(current_user: Annotated[userLogin, Depends(get_current_user)],
+                                repo_id: str):
+    m = ModelsFolder('')
+    return await m.get_model_readme_data(repo_id)
 
 @app.get("/get_models_metadata")
 async def get_metadata_of_all_models(current_user: Annotated[userLogin, Depends(get_current_user)]):
@@ -59,7 +65,7 @@ async def get_metadata_of_all_models(current_user: Annotated[userLogin, Depends(
 async def get_model_information(current_user: Annotated[userLogin, Depends(get_current_user)],
                                 model_repo: str):
     mf = ModelsFolder(model_repo)
-    return await mf.get_model_info()
+    return await mf.get_models_info()
 
 
 @app.get("/models")
@@ -80,8 +86,8 @@ async def get_models(current_user: Annotated[userLogin, Depends(get_current_user
 
 @app.delete("/model")
 async def delete_model(current_user: Annotated[userLogin, Depends(get_current_user)],
-                        model_repo: str):
-    m = ModelsFolder(model_repo)
+                        repo_id: str):
+    m = ModelsFolder(repo_id)
     await m.delete_model()
     return { 
         "message" : "Model is deleted successfully" 

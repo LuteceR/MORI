@@ -302,8 +302,8 @@ async function runModel() {
             label='Добавить модель' 
             icon='i-lucide-brain' 
             color="neutral" 
-            variant="ghost"
-            @click="getAvaliableModels()"
+            variant="outline"
+            @click="getAvaliableModels"
           />
           <template #body>
             <USelectMenu v-model="modelToAdd" :items="avaliableModels.map(model => model.name)" placeholder="Выберете модель"/>
@@ -320,8 +320,8 @@ async function runModel() {
             label='Добавить датасет' 
             icon='i-lucide-astroid' 
             color="neutral" 
-            variant="ghost"
-            @click="getAvaliableDatasets()"
+            variant="outline"
+            @click="getAvaliableDatasets"
           />
           <template #body>
             <USelectMenu v-model="datasetToAdd" :items="avaliableDatasets.map(dataset => dataset.name)" placeholder="Выберете датасет"/>
@@ -337,8 +337,8 @@ async function runModel() {
           <UButton 
             label='Запустить модель' 
             icon='i-lucide-chart-line' 
-            color="neutral" 
-            variant="ghost"
+            color="neutral"
+            variant="outline"
             @click=""
           />
           <template #body>
@@ -448,7 +448,7 @@ async function runModel() {
       <div class="text-default font-medium">
         Модели проекта:
       </div>
-      <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none border-gray-500 rounded-lg border">
+      <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
         <UCard :ui="{ body: 'p-3 sm:p-3' }" v-for="model in thisModels" :key="model.id_models" class="m-4 ">
           <span class="font-medium flex justify-between">
             {{ model.name.split('/')[1] || model.name }}
@@ -473,7 +473,7 @@ async function runModel() {
       <div class="text-default font-medium mt-3">
         Датасеты проекта:
       </div>
-      <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none border-gray-500 rounded-lg border">
+      <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
         <UCard :ui="{ body: 'p-3 sm:p-3' }" v-for="dataset in thisDatasets" :key="dataset.id_datasets" class="m-4">
           <span class="font-medium flex justify-between">
             <ULink  as="button" :to="'/dataset/' + dataset.name" class="flex self-center">

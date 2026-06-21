@@ -105,6 +105,19 @@ class ModelsFolder:
         except Exception as err:
             print("ERROR\n", err)
             raise
+
+    @staticmethod
+    async def get_model_readme_data(repo_id: str):
+        """
+        Возвращает данные модели с hugging face из её README
+        """
+        try:
+            card = ModelCard.load(repo_id)
+            metadata = card.data.to_dict()
+            metadata['name'] = repo_id
+            return metadata
+        except Exception as err:
+            print("ERROR\n", err)
         
     async def create_model(self, orig_model_id: int = None):
         """

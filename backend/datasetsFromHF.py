@@ -44,6 +44,15 @@ class DatasetsFolder:
             except Exception as err:
                 print("ERROR\n", err)
 
+    async def get_dataset_readme_data(self, repo_id: str):
+        try:
+            card = DatasetCard.load(repo_id)
+            metadata = card.data.to_dict()
+            metadata['name'] = repo_id
+            return metadata
+        except Exception as err:
+            print("ERROR\n", err)
+
 
     async def get_labels_list(self, dataset: str, filepath: str, ner_key: str = "ner") -> set:
         """
