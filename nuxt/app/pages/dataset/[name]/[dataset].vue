@@ -29,6 +29,8 @@ const editorOptions = {
   automaticLayout: true,
 };
 
+const apiBaseDatasets = useRuntimeConfig().public.apiBaseDatasets as string
+
 const repo_id_header = ref("Датасет");
 const repo_id = ref("");
 const openSidebar = ref(true);
@@ -176,8 +178,7 @@ const saveChanges = async (e : KeyboardEvent | MouseEvent) => {
             return;
         }
 
-        await fetch(
-            "http://localhost:8002/save_file_changes", {
+        await fetch(new URL('/save_file_changes', apiBaseDatasets), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -519,14 +520,13 @@ function processingTreeItems(tree: TreeItem[], path = ""): TreeItem[] {
                         }
                         
                         // console.log(item.label);
-                        
-                        fetch(
-                            "http://localhost:8002/file_from_dataset?" +
-                            new URLSearchParams(
+                        const url = new URL('/file_from_dataset', apiBaseDatasets)
+                        url.search = new URLSearchParams(
                             {
                                 dataset: name + "/" + dataset,
                                 filepath: currentPath + item.label,
-                            }),
+                            }).toString();
+                        fetch(url,
                             {
                                 credentials: "include"
                             }
@@ -575,7 +575,8 @@ async function request() {
     loading.value = true;
     
     try {
-        const response = await $fetch<DatasetResponse>("http://localhost:8002/dataset", {
+        const response = await $fetch<DatasetResponse>("/dataset", {
+            baseURL: apiBaseDatasets,
             method: 'GET',
             credentials: "include",
             query:  {

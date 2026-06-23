@@ -15,6 +15,10 @@ import { ItemResizeObserver } from 'virtua/unstable_core';
 import { fi } from 'zod/v4/locales';
 import { string } from 'zod';
 
+const config = useRuntimeConfig()
+const apiBaseDatasets = config.public.apiBaseDatasets as string
+const apiBaseModels = config.public.apiBaseModels as string
+
 interface ModelCardData {
     type: 'models',
     id: number,
@@ -68,9 +72,9 @@ const foundItem = ref({
 
 const urlDownload = computed(() => {
     if (switchValue.value == true) {
-        return "http://localhost:8002/dataset?"
+        return apiBaseDatasets+"/dataset?"
     } else {
-        return "http://localhost:8003/model?"
+        return apiBaseModels+"/model?"
     }
 })
 
@@ -84,9 +88,9 @@ const switchLabel = computed(()=> {
 
 const url = computed(() => {
     if (switchValue.value == true) {
-        return "http://localhost:8002/get_dataset_info?";
+        return apiBaseDatasets+"/get_dataset_info?";
     } else {
-        return "http://localhost:8003/get_model_info?";
+        return apiBaseModels+"/get_model_info?";
     }
 })
 
@@ -110,8 +114,8 @@ const highlightMatch = (text: string, search: string) => {
 async function deleteItem(repo_id: string, type: string) {
 
     const baseUrl = type === "datasets"
-    ? "http://localhost:8002/dataset?" 
-    : "http://localhost:8003/model?";
+    ? apiBaseDatasets+"/dataset?" 
+    : apiBaseModels+"/model?";
 
     const response = await fetch(
         baseUrl +
@@ -490,7 +494,7 @@ const languageItems = (lang: string[] | string): DropdownMenuItem[][] => {
 
 async function fetchModelsCards() {
     const response = await fetch(
-        "http://localhost:8003/get_models_metadata",
+        apiBaseModels+"/get_models_metadata",
     {
         credentials: "include"
     })
@@ -550,7 +554,7 @@ async function fetchModelsCards() {
 
 async function fetchDatasetsCards() {
     const response = await fetch(
-        "http://localhost:8002/datasets-info",
+        apiBaseDatasets+"/datasets-info",
         {
             credentials: "include"
         })

@@ -6,6 +6,8 @@ definePageMeta({
 import * as z from 'zod';
 import type { FormSubmitEvent } from '@nuxt/ui';
 
+const apiBaseProjects = useRuntimeConfig().public.apiBaseProjects as string
+
 const toast = useToast()
 const auth = useAuthStore();
 await auth.fetchUser();
@@ -21,7 +23,8 @@ const projects = ref<Project[]>([])
 
 async function requestProjects() {
   try {
-    const response = await $fetch<Project[]>("http://localhost:8004/projects", {
+    const response = await $fetch<Project[]>("/projects", {
+            baseURL: apiBaseProjects,
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -60,7 +63,7 @@ const state = reactive<Schema>({
 
 async function createProject(event: FormSubmitEvent<Schema>) {
   try {
-    const response = await fetch("http://localhost:8004/project", {
+    const response = await fetch(new URL('/project', apiBaseProjects), {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
@@ -92,7 +95,7 @@ async function createProject(event: FormSubmitEvent<Schema>) {
 
 async function deleteProject() {
   try {
-    const response = await fetch("http://localhost:8004/project", {
+    const response = await fetch(new URL('/project', apiBaseProjects), {
       method: "DELETE",
       headers: {
           "Content-Type": "application/json",

@@ -5,6 +5,7 @@ definePageMeta({
 
 const metricsId: number = Number(useRoute().params.id)
 
+const apiBaseProjects = useRuntimeConfig().public.apiBaseProjects as string
 
 interface ErrorLine {
     word_id: number;
@@ -25,7 +26,8 @@ interface MetricsResponse {
     per_label_accuracy: PerLabelAccuracy;
 }
 
-var details = await $fetch<MetricsResponse>(`http://localhost:8004/metrics/details/?metric_id=${metricsId}`, {
+var details = await $fetch<MetricsResponse>(`/metrics/details/?metric_id=${metricsId}`, {
+    baseURL: apiBaseProjects,
     method: "GET",
     headers: {
         "Content-Type": "application/json",

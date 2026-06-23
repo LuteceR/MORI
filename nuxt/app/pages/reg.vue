@@ -10,6 +10,8 @@ definePageMeta({
     }
 })
 
+const apiBaseAuth = useRuntimeConfig().public.apiBaseAuth as string
+
 const formSchema = z.object({
   login: z
     .string()
@@ -45,7 +47,8 @@ const onSubmit = handleSubmit(async (data) => {
     }
 
     try {
-        const response = await $fetch.raw("http://localhost:8001/registration", {
+        const response = await $fetch.raw("/registration", {
+            baseURL: apiBaseAuth,
             method: 'POST',
             body: JSON.stringify(payload),
             credentials: "include",

@@ -12,6 +12,11 @@ const colorMode = useColorMode()
 const projectId: number = Number(useRoute().params.id)
 const editMode = ref(false)
 
+const config = useRuntimeConfig()
+const apiBaseDatasets = config.public.apiBaseDatasets as string
+const apiBaseModels = config.public.apiBaseModels as string
+const apiBaseProjects = config.public.apiBaseProjects as string
+
 interface Project {
   id_projects: number
   username: string
@@ -53,8 +58,9 @@ interface ProjectResponse {
     "datasets": Dataset[]
   }
 
-const { data, error, pending } = await useFetch<ProjectResponse>('http://localhost:8004/project',
+const { data, error, pending } = await useFetch<ProjectResponse>('/project',
   {
+    baseURL: apiBaseProjects,
     query: { project_id: projectId },
     headers: { "Content-Type": "application/json" },
     credentials: "include"
@@ -84,7 +90,8 @@ watch(data, (newData) => {
 }, { immediate: true })
 
 
-const metrics = await $fetch<Metric[]>(`http://localhost:8004/metrics?project_id=${projectId}`, {
+const metrics = await $fetch<Metric[]>(`/metrics/?project_id=${projectId}`, {
+    baseURL: apiBaseProjects,
     method: "GET",
     headers: {
         "Content-Type": "application/json",
@@ -133,7 +140,8 @@ function showSuccess(message: string, description?: string) {
 
 async function getAvaliableModels() {
   try {
-    const response = await $fetch<Model[]>("http://localhost:8003/models", {
+    const response = await $fetch<Model[]>("/models", {
+            baseURL: apiBaseModels,
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -150,7 +158,8 @@ async function getAvaliableModels() {
 
 async function getAvaliableDatasets() {
   try {
-    const response = await $fetch<Dataset[]>("http://localhost:8002/datasets", {
+    const response = await $fetch<Dataset[]>("/datasets", {
+            baseURL: apiBaseDatasets,
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -171,7 +180,8 @@ async function addModelToProject() {
     return
   }
   try {
-    await $fetch(`http://localhost:8004/project/model?project_name=${thisProject.value.name}&model_name=${modelToAdd.value}`, {
+    await $fetch(`/project/model?project_name=${thisProject.value.name}&model_name=${modelToAdd.value}`, {
+      baseURL: apiBaseProjects,
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: "include",
@@ -191,7 +201,8 @@ async function addModelToProject() {
 async function addDatasetToProject() {
   if (!datasetToAdd.value) return
   try {
-    await $fetch(`http://localhost:8004/project/dataset?project_name=${thisProject.value.name}&dataset_name=${datasetToAdd.value}`, {
+    await $fetch(`/project/dataset?project_name=${thisProject.value.name}&dataset_name=${datasetToAdd.value}`, {
+      baseURL: apiBaseProjects,
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: "include",
@@ -210,7 +221,8 @@ async function addDatasetToProject() {
 
 async function removeModelFromProject(model: Model) {
   try {
-    await $fetch(`http://localhost:8004/project/model?project_name=${thisProject.value.name}&model_name=${model.name}`, {
+    await $fetch(`/project/model?project_name=${thisProject.value.name}&model_name=${model.name}`, {
+      baseURL: apiBaseProjects,
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: "include",
@@ -230,7 +242,8 @@ async function removeModelFromProject(model: Model) {
 
 async function removeDatasetFromProject(dataset: Dataset) {
   try {
-    await $fetch(`http://localhost:8004/project/dataset?project_name=${thisProject.value.name}&dataset_name=${dataset.name}`, {
+    await $fetch(`/project/dataset?project_name=${thisProject.value.name}&dataset_name=${dataset.name}`, {
+      baseURL: apiBaseProjects,
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: "include",
@@ -250,7 +263,8 @@ async function removeDatasetFromProject(dataset: Dataset) {
 
 async function removeRunResult(metric: Metric) {
   try {
-    await $fetch(`http://localhost:8004/metrics?project_id=${thisProject.value.id_projects}&metric_id=${metric.id_metrics}`, {
+    await $fetch(`/metrics/?project_id=${thisProject.value.id_projects}&metric_id=${metric.id_metrics}`, {
+      baseURL: apiBaseProjects,
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: "include",
@@ -292,7 +306,7 @@ async function runModel() {
   try {
     isModelRunning.value = true
     const metrics = await $fetch(
-      `http://localhost:8004/project/run?` +
+      `/project/run/?` +
       `project_name=${thisProject.value.name}&` +
       `model_name=${modelToAdd.value}&` +
       `dataset_name=${datasetToAdd.value}&` +
@@ -301,6 +315,7 @@ async function runModel() {
       `ner_key=${runNERKey.value}&` +
       (showThreshold.value ? `threshold=${thresholdValue.value}` : ''),
       {
+        baseURL: apiBaseProjects,
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'

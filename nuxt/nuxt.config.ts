@@ -54,7 +54,13 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    secretKey: process.env.SECRET_KEY || 'secret_key'
+    secretKey: process.env.SECRET_KEY || 'secret_key',
+    public: {
+      apiBaseAuth: process.env.API_BASE_AUTH || 'localhost:8001',
+      apiBaseDatasets: process.env.API_BASE_DATASETS || 'localhost:8002',
+      apiBaseModels: process.env.API_BASE_MODELS || 'localhost:8003',
+      apiBaseProjects: process.env.API_BASE_PROJECS || 'localhost:8004'
+    }
   },
 
   routeRules: {

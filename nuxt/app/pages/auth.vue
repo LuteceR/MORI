@@ -6,11 +6,12 @@ definePageMeta({
 })
 
 const auth = useAuthStore();
-
 import { ref, onMounted, onUnmounted, h } from 'vue';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Form, ErrorMessage, useForm, Field as VeeField } from 'vee-validate';
 import { z } from 'zod';
+
+const apiBaseAuth = useRuntimeConfig().public.apiBaseAuth as string
 
 const formSchema = z.object({
   login: z
@@ -41,7 +42,8 @@ const onSubmit = handleSubmit(async (data) => {
     }
   
     try {
-        const response = await $fetch.raw("http://localhost:8001/authorization", {
+        const response = await $fetch.raw("/authorization", {
+            baseURL: apiBaseAuth,
             method: 'POST',
             body: JSON.stringify(payload),
             credentials: "include",
@@ -149,7 +151,7 @@ const remember = ref(false);
                     class=""/>
                     <UFormField label="Запомнить меня"></UFormField>
                 </div>
-                <ULink as="button" href="/reg" right>не зарегестрированы?</ULink>
+                <ULink as="button" href="/reg" right>Не зарегистрированы?</ULink>
             </div>
             <UButton
                 color="primary"
