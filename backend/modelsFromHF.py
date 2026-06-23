@@ -244,12 +244,16 @@ class ModelsFolder:
 
             Получает предсказание модели на тексте.
         """
-        enc = tokenizer(
-            words,
-            is_split_into_words=True,
-            return_tensors="pt",
-            truncation=True
-        )
+        try:
+            enc = tokenizer(
+                words,
+                is_split_into_words=True,
+                return_tensors="pt",
+                truncation=True
+            )
+        except Exception:
+            raise HTTPException(status_code = status.HTTP_418_IM_A_TEAPOT, 
+                    detail = f"Error occured during text tokenization: {words}")
 
         with no_grad():
             outputs = model(**enc)
@@ -290,16 +294,19 @@ class ModelsFolder:
                 }
 
 
-    async def run_model(self, project_id, dataset_repo: str, 
-                        filepath: str, text_key: str = "words", threshold: float | None = None):
+    async def run_model(self, 
+                        project_id, 
+                        dataset_repo: str, 
+                        filepath: str, 
+                        text_key: str = "words", 
+                        ner_key: str = "ner", 
+                        threshold: float | None = None):
         """
         Запускает модели на данных, 
         dataset_repo - датасет
         filepath - путь до файла .jsonl с данными
         text_key - ключ в файле, содержащий текст
-
-        при создания файла со списком меток датасета ожидает
-        что метки находятся по ключу "ner"
+        ner_key - ключ в файле, содержащий NER-метки
         
         Raises:
             HTTPException:
@@ -321,7 +328,7 @@ class ModelsFolder:
         dataset = DatasetsFolder()
         # Получение списка меток
         model_labels = await self.get_labels()
-        dataset_labels = await dataset.get_labels_list(dataset_repo, filepath, "ner")
+        dataset_labels = await dataset.get_labels_list(dataset_repo, filepath, ner_key)
 
         model_diff = model_labels - dataset_labels # есть в модели но нет в датасете
         ds_diff = dataset_labels - model_labels # есть в датасете но нет в модели
@@ -333,20 +340,16 @@ class ModelsFolder:
 
         tokenizer = AutoTokenizer.from_pretrained(self.full_path)
         model = AutoModelForTokenClassification.from_pretrained(self.full_path)
-        nlp = pipeline("token-classification", model=model, tokenizer=tokenizer, ignore_labels=list(model_diff)) 
+        nlp = pipeline("token-classification", model=model, tokenizer=tokenizer, ignore_labels=list(model_diff))
         # ignore_labels - не выдавать в результате слова с этими метками
 
-        json_data = await dataset.read_file(dataset_repo, filepath)
-        data = []
-
-        try:
-            for line in json_data:
-                if line != "":
-                    data.append(json.loads(line))
-        except Exception as e:
-            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
-                        detail = f"Exception occured when reading file: {e}")
-
+        data = await dataset.readDataset(dataset_repo, filepath)
+        # преобразование одиночных значений в массивы
+        for line in data:
+            if not isinstance(line[text_key], list):
+                line[text_key] = [line[text_key]]
+            if not isinstance(line[ner_key], list):
+                line[ner_key] = [line[ner_key]]
         results = []
         for line in data:
             answer = self.__pred__(line[text_key], tokenizer, model, threshold)
@@ -355,7 +358,7 @@ class ModelsFolder:
             # print(results)
             # print()
             results.append(answer)
-        metrics = await calcMetrics(data, results, text_key, model_labels)
+        metrics = await calcMetrics(data, results, text_key, ner_key, model_labels)
         await storeResults(metrics, project_id, db_dataset.id_datasets, db_model.id_models)
         return metrics
 

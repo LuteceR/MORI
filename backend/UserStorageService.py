@@ -65,7 +65,7 @@ class UserStorageService:
             "datasets": datasets_result,
         }
 
-    async def get_user_projects(self):
+    async def get_projects_of_user(self):
         query = select(users.c.username, projects.c.id_projects, projects.c.name, projects.c.description).select_from(
             users.join(projects, projects.c.id_users == users.c.id_users)
             ).where(users.c.username == self.__username)
@@ -465,8 +465,14 @@ class UserStorageService:
         await database.execute(query)
 
 
-    async def runModel(self, project_name: str, model_name: str, dataset_name: str, 
-                       filepath: str, text_key: str, threshold: float | None = None):
+    async def runModel(self, 
+                       project_name: str, 
+                       model_name: str, 
+                       dataset_name: str, 
+                       filepath: str, 
+                       text_key: str | None = None, 
+                       ner_key: str | None = None, 
+                       threshold: float | None = None):
         """
         Запускает выполнение модели на указанном датасете
         filepath - путь до файла .jsonl с данными
@@ -477,7 +483,14 @@ class UserStorageService:
                 * HTTP_409_CONFLICT ошибка чтения файла датасета
                 * HTTP_400_BAD_REQUEST модели/датасета/прокта не существует
         """
-        # TODO: нет проверки принадлежности модели и датасета к проекту
+        kwargs = {} # проверка на None передаваемых параметров
+        if text_key is not None:
+            kwargs['text_key'] = text_key
+        if ner_key is not None:
+            kwargs['ner_key'] = ner_key
+        if threshold is not None:
+            kwargs['threshold'] = threshold
+
         query = projects.select().where(projects.c.name == project_name)
         project = await database.fetch_one(query)
 
@@ -489,5 +502,5 @@ class UserStorageService:
 
         mf = ModelsFolder(model_name)
         results = await mf.run_model(project.id_projects, dataset_name, 
-                                     filepath, text_key=text_key, threshold=threshold)
+                                     filepath, **kwargs)
         return results

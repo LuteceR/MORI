@@ -37,15 +37,19 @@ async def shutdown():
 
 d = DatasetsFolder()
 
+@app.get("/test")
+async def qwerty():
+    return await DatasetsFolder().readDataset("Llamacha/ner_quechua_iic", "test2.csv")
+
+
 @app.post("/dataset")
 async def download_dataset_hf(current_user: Annotated[userLogin, Depends(get_current_user)],
                               repo_id: str):
-    
     await d.download_dataset(repo_id)
-    
     return { 
         "message" : "Dataset is downloaded successfully" 
         }
+
 
 @app.get("/datasets-info")
 async def get_info_of_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):
@@ -63,9 +67,6 @@ async def get_info_of_all_datasets(current_user: Annotated[userLogin, Depends(ge
 @app.get("/dataset")
 async def get_info(current_user: Annotated[userLogin, Depends(get_current_user)],
                     dataset: str):
-    
-
-
     if not "/" in dataset:
         raise HTTPException(
                     status_code = status.HTTP_400_BAD_REQUEST, 
@@ -103,10 +104,12 @@ async def get_dataset_labels_list(current_user: Annotated[userLogin, Depends(get
                                   ner_key: str):
     return await d.get_labels_list(dataset, filename, ner_key)
 
+
 @app.get('/get_dataset_info')
 async def get_metadata_of_dataset(current_user: Annotated[userLogin, Depends(get_current_user)],
                                 repo_id: str):
     return await d.get_dataset_readme_data(repo_id)
+
 
 @app.get("/datasets")
 async def get_all_datasets(current_user: Annotated[userLogin, Depends(get_current_user)]):

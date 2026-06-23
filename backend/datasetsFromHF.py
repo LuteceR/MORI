@@ -13,6 +13,7 @@ import asyncio
 import json
 import shutil
 from pathlib import Path
+import pandas as pd
 
 from db import database, STORAGE_FULL_PATH
 from models import datasets
@@ -70,15 +71,14 @@ class DatasetsFolder:
                     labels_list.add(line.strip())
             return labels_list
 
-        data = await self.read_file(dataset, filepath)
+        data = await self.readDataset(dataset, filepath)
         try:
             for line in data:
-                if len(line.strip()) == 0: continue
-                labels = json.loads(line)[ner_key]
-                labels_list.update(labels)
-        except json.JSONDecodeError:
+                labels = line[ner_key]
+                labels_list.update(labels if isinstance(labels, list) else [labels])
+        except KeyError:
             raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
-                                    detail = f"Invalid label's key or file")
+                                    detail = f"Invalid label's key: {ner_key}")
         
         labels_list = set([x.upper().strip() for x in labels_list])
         
@@ -125,6 +125,7 @@ class DatasetsFolder:
                                 folder_path=str(self.local_dir_ / repo_id))
         await database.execute(query)
 
+
     async def delete_dataset(self, repo_id: str):
         """
         удаление датасета с Hugging face
@@ -166,26 +167,40 @@ class DatasetsFolder:
         return tree
     
 
-    async def read_file(self, dataset: str, filepath: str) -> list:
+    async def readDataset(self, dataset, filepath):
         """
-        чтение файла с локальным путём filepath из датасета.
-        dataset - глобальный путь к датасету
+        Чтение jsonl / csv файла. 
+
+        * Не проверяет формат данных в строке, 
+        только их количество (пропускает некорректные строки)
         """
         path = self.local_dir_ / dataset / Path(filepath)
-        # path = path.join(Path(filepath))
-        content = []
+        if not Path(filepath).suffix in [".jsonl", ".csv"]:
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
+                        detail = f"Invalid file extension: {Path(filepath).suffix}")
+        
+        data = []
         try:
-            async with aiofiles.open(path, "r", encoding="utf-8") as file:
-                while True:
-                    line = await file.readline()
-                    content.append(line)
-                    if not line:
-                        break
+            if Path(filepath).suffix == ".jsonl":
+                async with aiofiles.open(path, "r", encoding="utf-8") as file:
+                    while True:
+                        line = await file.readline()
+                        if not line is None and line != "":
+                            data.append(json.loads(line))
+                        else:
+                            break
+            elif Path(filepath).suffix == ".csv":
+                # пропускаются "плохие" строки, выводится предупреждение
+                df = pd.read_csv(path, sep=None, engine='python', quoting=3, quotechar="", on_bad_lines="warn", dtype=str)
+                data = df.to_dict(orient='records')
         except FileNotFoundError:
             raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
                                     detail = f"File {filepath} does not exist!")
-        return content
-    
+        except Exception as e:
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
+                        detail = f"Exception occured during reading file: {e}")
+        return data
+        
 
     async def save_file_changes(self,
                                 dataset: str,

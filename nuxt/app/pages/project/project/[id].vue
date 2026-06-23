@@ -10,6 +10,7 @@ const auth = useAuthStore();
 const isSidebarOpened = ref(true)
 const colorMode = useColorMode()
 const projectId: number = Number(useRoute().params.id)
+const editMode = ref(false)
 
 interface Project {
   id_projects: number
@@ -246,17 +247,48 @@ async function removeDatasetFromProject(dataset: Dataset) {
   }
 }
 
+
+async function removeRunResult(metric: Metric) {
+  try {
+    await $fetch(`http://localhost:8004/metrics?project_id=${thisProject.value.id_projects}&metric_id=${metric.id_metrics}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: "include",
+    })
+    const index = thisMetrics.value.indexOf(metric);
+    if (index > -1) {
+      thisMetrics.value.splice(index, 1);
+      showSuccess('Результат запуска успешно удален')
+    }
+  } catch (e) {
+    console.error(e)
+    showError('Произошла ошибка при удалении результата запуска!')
+  }
+}
+
+
 const isModelRunning = ref(false)
 const runFilePath = ref('test.jsonl')
 const runWordsKey = ref('words')
+const runNERKey = ref('ner')
 const showThreshold = ref(false)
 const thresholdValue = ref<number>(0.5)
 
 async function runModel() {
-  if (runFilePath.value == '' || runWordsKey.value == '') {
-    showSuccess(runFilePath.value == ''? 'Укажите путь до файла': 'Укажите json-ключ')
-    return
-  }
+
+    if (runFilePath.value == '') {
+      showError('Укажите путь до файла')
+      return
+    }
+    else if (runWordsKey.value == '') {
+      showError('Укажите ключ для текста')
+      return
+    }
+    else if (runNERKey.value == '') {
+      showError('Укажите ключ для NER-меток')
+      return
+    }
+  
   try {
     isModelRunning.value = true
     const metrics = await $fetch(
@@ -265,8 +297,9 @@ async function runModel() {
       `model_name=${modelToAdd.value}&` +
       `dataset_name=${datasetToAdd.value}&` +
       `filepath=${runFilePath.value}&` +
-      `text_key=${runWordsKey.value}` +
-      (showThreshold.value ? `&threshold=${thresholdValue.value}` : ''),
+      `text_key=${runWordsKey.value}&` +
+      `ner_key=${runNERKey.value}&` +
+      (showThreshold.value ? `threshold=${thresholdValue.value}` : ''),
       {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -345,10 +378,13 @@ async function runModel() {
             <USelectMenu class="mb-4 w-[85%]" v-model="modelToAdd" :items="thisModels.map(model => model.name)" placeholder="Выберете модель"/>
             <USelectMenu class="mb-4 w-[85%]" v-model="datasetToAdd" :items="thisDatasets.map(dataset => dataset.name)" placeholder="Выберете датасет"/>
             <UFormField label="Путь до файла">
-              <UInput class="mb-4 w-[85%]" v-model="runFilePath" placeholder="test.jsonl"/>
+              <UInput class="mb-4 w-[85%]" v-model="runFilePath" placeholder="test.jsonl" required/>
             </UFormField>
-            <UFormField label="Json-ключ в файле, где хранится текст">
-              <UInput class="mb-4 w-[85%]" v-model="runWordsKey" placeholder="words"/>
+            <UFormField label="Ключ в файле, где хранится текст">
+              <UInput class="mb-4 w-[85%]" v-model="runWordsKey" placeholder="words" required/>
+            </UFormField>
+            <UFormField label="Ключ в файле, где хранится NER-метки">
+              <UInput class="mb-4 w-[85%]" v-model="runNERKey" placeholder="ner" required/>
             </UFormField>
             <UFormField>
               <div class="flex items-center gap-2">
@@ -373,17 +409,9 @@ async function runModel() {
           </template>
         </UModal>
       </template>
-
-      <!-- <template #footer>
-        <UButton
-            icon="i-lucide-panel-left"
-            color="neutral"
-            variant="ghost"
-            aria-label="Toggle sidebar"
-            @click="isSidebarOpened = !isSidebarOpened"
-        />
-      </template> -->
     </USidebar>
+
+    <!-- СЕРЕДИНА СТРАНИЦЫ -->
     <div class="flex flex-col lg:w-[75%] sm:w-[65%] h-screen gap-6 p-8 transform transition-all duration-200 max-h-screen">
       <div h-(--ui-header-height) shrink-0 flex items-center px-4>
           <UButton
@@ -394,14 +422,15 @@ async function runModel() {
             @click="isSidebarOpened = !isSidebarOpened"
           />
       
-        <span class="text-default text-3xl ml-4">{{ thisProject.name.split('/')[1] || thisProject.name }}</span>
+        <span class="text-default text-3xl ml-4">
+          {{ thisProject.name.split('/')[1] || thisProject.name }}
+        </span>
         <UButton class="ml-4"
           icon='i-lucide-pencil' 
-          color="neutral" 
-          variant="ghost"
-          @click="" 
-          disabled
-        />
+          :color="editMode ? 'warning' : 'neutral'"
+          :variant="editMode ? 'solid' : 'ghost'"
+          @click="editMode = !editMode" 
+          />
         <div v-if="isModelRunning" class="w-full h-20 shrink-0 mt-2">
           <div class="flex items-center">
             <UButton size="lg" variant="ghost" color="neutral" leadingIcon='i-lucide-shell' class="animate-spin"/>
@@ -409,18 +438,28 @@ async function runModel() {
           </div>
         </div>
       </div>
-      <UScrollArea>
-        <div v-if="thisMetrics.length === 0" class="text-center h-dvh">
+      <UScrollArea class="rounded-lg ring ring-default shadow-lg">
+        <div v-if="thisMetrics.length == 0" class="text-center h-dvh">
           Вы ещё не запускали модели в этом проекте
         </div>
-        <UCard v-for="(metric, index) in thisMetrics" :key="metric.id_metrics" class="m-4 w-full">
+        <UCard v-for="(metric, index) in thisMetrics" :key="metric.id_metrics" class="m-4 w-[95%]">
           <template #header>
             <div class="text-xl flex justify-between items-center">
-              <span> Запуск #{{ index + 1 }} </span>
-              <span class="text-sm"> {{ metric.date }} </span>
+              <span> Запуск #{{ index + 1 }}</span>
+              <span class="flex items-center">
+                <span class="text-sm"> {{ metric.date }}</span>
+                <UButton v-if="editMode"
+                  icon="i-lucide-x" 
+                  variant="outline" 
+                  size="xs"
+                  class="ml-3"
+                  color="error"
+                  @click="removeRunResult(metric)"
+                />
+              </span>
             </div>
           </template>
-          <div class="flex justify-between items-end">
+          <div class="flex flex-row justify-between items-end">
             <div class="max-w-110">
               <div class="w-full"> Модель {{ metric.name }} </div>
               <div class="w-full"> Датасет {{ metric.name_1 }} </div>
@@ -437,8 +476,8 @@ async function runModel() {
                 color="primary" 
                 leadingIcon='i-lucide-arrow-up-right'
                 :to="`/metrics/${metric.id_metrics}`"
-            />  
-          </div> 
+            />
+          </div>
         </UCard>
       </UScrollArea>
     </div>
@@ -450,17 +489,17 @@ async function runModel() {
       </div>
       <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
         <UCard :ui="{ body: 'p-3 sm:p-3' }" v-for="model in thisModels" :key="model.id_models" class="m-4 ">
-          <span class="font-medium flex justify-between">
+          <div class="font-medium flex justify-between">
             {{ model.name.split('/')[1] || model.name }}
-            <UButton 
+            <UButton v-if="editMode"
               icon="i-lucide-x" 
-              variant="ghost" 
+              variant="outline" 
               size="xs"
-              class="hover:bg-gray-100"
+              class="mb-auto"
               color="error"
               @click="removeModelFromProject(model)"
             />
-          </span>
+          </div>
           <template v-if="model.id_original_model" class="text-gray-400">            
             {{ model.id_original_model }}
           </template>
@@ -476,14 +515,14 @@ async function runModel() {
       <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
         <UCard :ui="{ body: 'p-3 sm:p-3' }" v-for="dataset in thisDatasets" :key="dataset.id_datasets" class="m-4">
           <span class="font-medium flex justify-between">
-            <ULink  as="button" :to="'/dataset/' + dataset.name" class="flex self-center">
+            <ULink as="button" :to="'/dataset/' + dataset.name" class="flex self-center">
               {{ dataset.name.split('/')[1] || dataset.name }}
             </ULink>
-            <UButton 
+            <UButton v-if="editMode"
                 icon="i-lucide-x" 
-                variant="ghost" 
+                variant="outline" 
                 size="xs"
-                class="hover:bg-gray-100"
+                class="mb-auto"
                 color="error"
                 @click="removeDatasetFromProject(dataset)"
               />

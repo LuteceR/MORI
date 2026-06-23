@@ -36,56 +36,50 @@ var details = await $fetch<MetricsResponse>(`http://localhost:8004/metrics/detai
 const [datePart, timePart] = details.date.split('T');
 details.date = `${timePart?.split('.')[0]} ${datePart}`;
 
-function convertToFormat(error_line: ErrorLine) {
-
+function truncate(str: string, max: number) {
+  return str.length > max ? str.slice(0, max) + "..." : str;
 }
 
 </script>
 <template>
-    <div class="flex justify-between items-end h-full w-full">
-        <div class="flex self-center justify-center m-auto max-w-[80%]">
-            <div>
-                <span>Модель</span>
-                <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg">  {{ details.name }} </div>
-                <span>Датасет</span>
-                <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg"> Датасет {{ details.name_1 }} </div>
-                <span>Дата запуска</span>
-                <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg"> Дата запуска {{ details.date }} </div>
-                <span>Метрики</span>
-                <div class="w-full ml-4 p-5 gap-1 rounded-lg ring-default shadow-lg">
-                    <div v-for="label in Object.keys(details.per_label_accuracy)">
-                        <div class="w-full">{{label}}: {{ details.per_label_accuracy[label]?.toFixed(4)  }}</div>
-                    </div>
+    <div class="flex justify-center h-full m-8">
+        <div>
+            <span>Модель</span>
+            <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg">  {{ details.name }} </div>
+            <span>Датасет</span>
+            <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg"> Датасет {{ details.name_1 }} </div>
+            <span>Дата запуска</span>
+            <div class="w-full p-5 gap-1 rounded-lg ring-default shadow-lg"> Дата запуска {{ details.date }} </div>
+            <span>Метрики</span>
+            <div class="w-full ml-4 p-5 gap-1 rounded-lg ring-default shadow-lg">
+                <div v-for="label in Object.keys(details.per_label_accuracy)">
+                    <div class="w-full">{{label}}: {{ details.per_label_accuracy[label]?.toFixed(4)  }}</div>
                 </div>
             </div>
-            
-            <div class="container mx-auto p-4 max-w-[60%]">
-                Ошибки модели  
-                <div 
-                v-for="(error_line, index) in details.error_lines" 
+        </div>
+        
+        <div class="p-4 max-w-[60%]">
+            Ошибки модели  
+            <div v-for="(error_line, index) in details.error_lines" 
                 :key="index"
-                class="mb-6 p-4 border rounded-lg"
-                >
-                <div class="w-full">
-                    <div class="text-sm mb-2">
-                    Word ID: {{ error_line.word_id }}
-                    </div>
-                    <div class="flex flex-wrap gap-2">
+                class="mb-6 p-4 border rounded-lg mr-auto"
+            >
+                <div class="flex flex-wrap gap-2">
                     <div 
                         v-for="(word, wordIndex) in error_line.words"
                         :key="wordIndex"
-                        class="relative inline-block"
-                    >   <UPopover>
-                        <div :class="[
-                                'px-2 py-1 rounded relative group',
-                                wordIndex === error_line.word_id 
-                                ? 'border-2 border-red-500' 
-                                : 'border'
-                            ]">
-                            <span class="text-sm">{{ word }}</span>
-                        </div>
-                        
-                        
+                        class="inline-block"
+                    >
+                        <UPopover>
+                            <div :class="[
+                                    'px-2 py-1 rounded',
+                                    wordIndex === error_line.word_id 
+                                    ? 'border-2 border-red-500' 
+                                    : 'border'
+                                ]">
+                                <span class="text-sm">{{ truncate(word, 50) }}</span>
+                            </div>
+                            
                             <template #content>
                                 <div class="flex gap-1">
                                     <span class="px-1 py-0.5 bg-green-100 text-green-800 rounded">
@@ -98,10 +92,8 @@ function convertToFormat(error_line: ErrorLine) {
                             </template>
                         </UPopover>
                     </div>
-                    </div>
-                </div>
                 </div>
             </div>
-        </div> 
+        </div>
     </div> 
 </template>

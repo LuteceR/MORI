@@ -37,19 +37,34 @@ async def storeResults(results, project_id, dataset_id, model_id):
         await storeMetricResult(results[metric], metric, metric_id)
     
 
-async def calcMetrics(data_true, data_pred, text_key, labels_names):
+async def deleteResults(project_id, metric_id):
+    """
+        Удаление результата запуска модели
+    """
+    query = metrics.delete().where(
+        metrics.c.id_metrics == metric_id and metrics.c.id_projects == project_id
+    )
+    result = await database.fetch_one(query)
+    if not result is None:
+        raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Metric (run result) was not found"
+            )
+
+
+async def calcMetrics(data_true, data_pred, text_key, ner_key, labels_names):
     total = 0
     error = 0.0
     errorLines = []
-    all_true = np.concatenate([true_label['ner'] for true_label in data_true])
-    all_pred = np.concatenate([pred_label['ner'] for pred_label in data_pred])
+    all_true = np.concatenate([true_label[ner_key] for true_label in data_true])
+    all_pred = np.concatenate([pred_label["ner"] for pred_label in data_pred])
 
     label_correct = {label: 0 for label in labels_names}
     label_total = {label: 0 for label in labels_names}
 
     for true_item, pred_item in zip(data_true, data_pred):
-        true_ner = true_item['ner']
-        pred_ner = pred_item['ner']
+        true_ner = true_item[ner_key]
+        pred_ner = pred_item["ner"]
 
         n = min(len(true_ner), len(pred_ner))
         total += n

@@ -47,7 +47,7 @@ async def get_project(current_user: Annotated[userLogin, Depends(get_current_use
 @app.get("/projects")
 async def get_user_projects(current_user: Annotated[userLogin, Depends(get_current_user)]):
     user = UserStorageService(current_user.username)
-    return await user.get_user_projects()
+    return await user.get_projects_of_user()
 
 
 # create project
@@ -182,9 +182,11 @@ async def run_project(current_user: Annotated[userLogin, Depends(get_current_use
                               model_name: str,
                               dataset_name: str,
                               filepath: str, 
-                              text_key: str,
+                              text_key: str | None = None,
+                              ner_key: str | None = None,
                               threshold: float | None = None):
     
     user = UserStorageService(current_user.username)
     
-    return await user.runModel(project_name, model_name, dataset_name, filepath, text_key, threshold=threshold)
+    return await user.runModel(project_name, model_name, dataset_name, filepath, text_key, ner_key, threshold=threshold)
+
