@@ -169,8 +169,8 @@ onMounted(requestProjects)
   </div>
     
 
-  <div class="flex flex-row h-full w-full mt-15 m-auto justify-center">
-    <UPageList class="flex flex-col mb-auto rounded-t h-full w-[50%] p-4 gap-4 ring ring-default shadow-sm">
+  <div class="flex flex-col md:flex-row h-full w-full mt-15 m-auto justify-center">
+    <UPageList class="order-last md:order-first flex flex-col mb-auto rounded-t h-full min-w-[50%] xl:w-160 p-4 gap-4 ring ring-default shadow-sm">
         
         <div v-if="projects.length === 0" class="text-center h-dvh">
         У вас нет проектов
@@ -192,7 +192,7 @@ onMounted(requestProjects)
         </UCard>
     </UPageList>
 
-    <div class="flex flex-col p-4">
+    <div class="order-first md:order-last flex flex-col p-4">
       <UModal
         :transition="true"
         :ui="{

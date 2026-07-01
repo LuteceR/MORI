@@ -148,14 +148,20 @@ class UserStorageService:
 
     async def create_project(self, project_name: str, description: str = ""):
         """
-        создаёт директорию для проекта и добавляет его в 
+        создаёт директорию для проекта и добавляет его в БД
 
-        Raises:
-            status.HTTP_401_UNAUTHORIZED: совпадение логина и пароля
-            status.HTTP_409_CONFLICT: наличие репозитория с таким же названием
+        Raises HTTPException:
+            HTTP_400_BAD_REQUEST: Имя проекта содержит символы помимо букв и цифр
+            HTTP_401_UNAUTHORIZED: совпадение логина и пароля
+            HTTP_409_CONFLICT: наличие репозитория с таким же названием
         """
 
-        if UserStorageService.storage_full_path == "": return 0
+        if UserStorageService.storage_full_path == "": 
+            raise HTTPException(status_code = status.HTTP_409_CONFLICT, 
+                                detail = "Storage path is not set")
+        if not project_name.isalnum(): 
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, 
+                                detail = "Project name must contains only letters and numbers")
 
         try:
             Path(UserStorageService.storage_full_path + f"/USERS/{self.__username}/PROJECTS/{project_name}").mkdir(parents=True)

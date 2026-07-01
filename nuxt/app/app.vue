@@ -15,7 +15,7 @@ useHead({
 })
 
 const title = 'МОРИ'
-const description = 'МОРИ - Машинное Обучение : Разворачивание и Исследование.'
+const description = 'МОРИ - Машинное Обучение: Разворачивание и Исследование.'
 const route = useRoute()
 const search = ref('');
 const router = useRouter();
@@ -39,7 +39,7 @@ useSeoMeta({
 
 <template>
   <UApp>
-    <UHeader>
+    <UHeader :toggle="false">
       <template #left>
         <NuxtLink to="/">
           <AppLogo />
@@ -48,7 +48,7 @@ useSeoMeta({
           v-model="search" 
           v-if="!['/search', '/auth', '/reg'].includes(route.path)" 
           color='info' 
-          class='lg:ml-4 sm:ml-4 transform transition-all duration-400 lg:w-90 md:w-70 sm:w-60' 
+          class='lg:ml-4 sm:ml-4 transform transition-all duration-400 sm:w-60 md:w-70 lg:w-90' 
           icon="i-lucide-search" 
           size="md" 
           variant="outline" 
@@ -62,7 +62,7 @@ useSeoMeta({
       </template>
     </UHeader>
     
-    <UMain>
+    <UMain class="flow-root">
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>

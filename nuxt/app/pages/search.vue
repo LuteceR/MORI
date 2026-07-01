@@ -654,7 +654,7 @@ onMounted(() => {
 <template>
     <div class="grid grid-rows-[10%_1fr] h-full">
 
-        <div class="h-screen grid grid-cols-[50%_50%] md:grid-cols-[30%_70%] sm:grid-cols-[40%_60%] transform transition-all duration-400">
+        <div class="h-[90vh] grid grid-cols-[50%_50%] md:grid-cols-[30%_70%] sm:grid-cols-[40%_60%] transform transition-all duration-400">
             
             <div class="flex flex-col h-fit sm:pr-10 sm:pl-10 md:pr-10 md:pl-10 transform transition-all duration-400">
                     

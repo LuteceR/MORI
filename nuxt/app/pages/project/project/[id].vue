@@ -2,20 +2,39 @@
 definePageMeta({
   middleware: 'auth'
 })
-
+import { onMounted } from 'vue'
 import type { NavigationMenuItem  } from '@nuxt/ui'
 
 const toast = useToast()
 const auth = useAuthStore();
 const isSidebarOpened = ref(true)
+const isSidebarRightOpened = ref(true)
 const colorMode = useColorMode()
 const projectId: number = Number(useRoute().params.id)
-const editMode = ref(false)
+const editMode = ref(false) // режим удаления объектов
+const isModelRunning = ref(false)
+const runFilePath = ref('test.jsonl')
+const runWordsKey = ref('words')
+const runNERKey = ref('ner')
+const showThreshold = ref(false)
+const thresholdValue = ref<number>(0.5)
 
 const config = useRuntimeConfig()
 const apiBaseDatasets = config.public.apiBaseDatasets as string
 const apiBaseModels = config.public.apiBaseModels as string
 const apiBaseProjects = config.public.apiBaseProjects as string
+
+const handleResize = () => {
+  if (isSidebarOpened.value != window.innerWidth > 1024) 
+    isSidebarOpened.value = window.innerWidth > 1024
+  if (isSidebarRightOpened.value != window.innerWidth > 1024)
+    isSidebarRightOpened.value = window.innerWidth > 1024
+}
+
+onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+})
 
 interface Project {
   id_projects: number
@@ -280,14 +299,6 @@ async function removeRunResult(metric: Metric) {
   }
 }
 
-
-const isModelRunning = ref(false)
-const runFilePath = ref('test.jsonl')
-const runWordsKey = ref('words')
-const runNERKey = ref('ner')
-const showThreshold = ref(false)
-const thresholdValue = ref<number>(0.5)
-
 async function runModel() {
 
     if (runFilePath.value == '') {
@@ -335,9 +346,10 @@ async function runModel() {
 
 <template>
   <div class="flex flex-1">
+    <!-- ЛЕВАЯ ЧАСТЬ -->
     <USidebar
       v-model:open="isSidebarOpened"
-      collapsible="icon"
+      collapsible="offcanvas"
       :ui="{
           gap: 'h-[calc(100%-var(--ui-header-height))]',
           container:
@@ -427,34 +439,45 @@ async function runModel() {
     </USidebar>
 
     <!-- СЕРЕДИНА СТРАНИЦЫ -->
-    <div class="flex flex-col lg:w-[75%] sm:w-[65%] h-screen gap-6 p-8 transform transition-all duration-200 max-h-screen">
-      <div h-(--ui-header-height) shrink-0 flex items-center px-4>
+    <div class="flex flex-col w-full lg:w-[75%] gap-6 p-8 transform transition-all duration-200 h-[90vh]">
+      <div class="flex justify-between">
+        <!-- Кнопочечки хихихих 👇 -->
+        <div>
           <UButton
             icon="i-lucide-panel-left"
             color="neutral"
+            class="inline lg:hidden"
             variant="ghost"
             aria-label="Toggle sidebar"
             @click="isSidebarOpened = !isSidebarOpened"
           />
-      
-        <span class="text-default text-3xl ml-4">
-          {{ thisProject.name.split('/')[1] || thisProject.name }}
-        </span>
-        <UButton class="ml-4"
-          icon='i-lucide-pencil' 
-          :color="editMode ? 'warning' : 'neutral'"
-          :variant="editMode ? 'solid' : 'ghost'"
-          @click="editMode = !editMode" 
-          />
-        <div v-if="isModelRunning" class="w-full h-20 shrink-0 mt-2">
-          <div class="flex items-center">
-            <UButton size="lg" variant="ghost" color="neutral" leadingIcon='i-lucide-shell' class="animate-spin"/>
-            <span class="ml-4">Модель расчитывает ответы...</span>
-          </div>
+          <span class="text-default text-3xl ml-4">
+            {{ thisProject.name.split('/')[1] || thisProject.name }}
+          </span>
+          <UButton class="ml-4"
+            icon='i-lucide-pencil' 
+            :color="editMode ? 'warning' : 'neutral'"
+            :variant="editMode ? 'solid' : 'ghost'"
+            @click="editMode = !editMode" 
+            />
+        </div>
+        <UButton
+          icon="i-lucide-panel-right"
+          color="neutral"
+          class="inline lg:hidden"
+          variant="ghost"
+          aria-label="Toggle right sidebar"
+          @click="isSidebarRightOpened = !isSidebarRightOpened"
+        />
+      </div>
+      <div v-if="isModelRunning" class="w-full h-20 shrink-0 mt-2">
+        <div class="flex items-center">
+          <UIcon name='i-lucide-shell' class="animate-spin size-5"/>
+          <span class="ml-4">Модель расчитывает ответы...</span>
         </div>
       </div>
       <UScrollArea class="rounded-lg ring ring-default shadow-lg">
-        <div v-if="thisMetrics.length == 0" class="text-center h-dvh">
+        <div v-if="thisMetrics.length == 0" class="text-center h-dvh mt-6">
           Вы ещё не запускали модели в этом проекте
         </div>
         <UCard v-for="(metric, index) in thisMetrics" :key="metric.id_metrics" class="m-4 w-[95%]">
@@ -474,8 +497,8 @@ async function runModel() {
               </span>
             </div>
           </template>
-          <div class="flex flex-row justify-between items-end">
-            <div class="max-w-110">
+          <div class="flex flex-col md:flex-row md:justify-between md:items-end">
+            <div class="max-w-110 md:order-first">
               <div class="w-full"> Модель {{ metric.name }} </div>
               <div class="w-full"> Датасет {{ metric.name_1 }} </div>
               Метрики  
@@ -488,65 +511,78 @@ async function runModel() {
             <UButton 
                 size="lg" 
                 label="Подробный отчёт" 
-                color="primary" 
+                color="primary"
+                class="mt-4 md:mt-0 md:order-last"
                 leadingIcon='i-lucide-arrow-up-right'
                 :to="`/metrics/${metric.id_metrics}`"
-            />
+              />
           </div>
         </UCard>
       </UScrollArea>
     </div>
-    
-    <USeparator orientation="vertical" class="h-screen" />
-    <div class="flex flex-col lg:w-[25%] sm:w-[35%] gap-3 p-4 max-h-screen overflow-y-auto transform transition-all duration-200">
-      <div class="text-default font-medium">
-        Модели проекта:
-      </div>
-      <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
-        <UCard :ui="{ body: 'p-3 sm:p-3' }" v-for="model in thisModels" :key="model.id_models" class="m-4 ">
-          <div class="font-medium flex justify-between">
-            {{ model.name.split('/')[1] || model.name }}
-            <UButton v-if="editMode"
-              icon="i-lucide-x" 
-              variant="outline" 
-              size="xs"
-              class="mb-auto"
-              color="error"
-              @click="removeModelFromProject(model)"
-            />
-          </div>
-          <template v-if="model.id_original_model" class="text-gray-400">            
-            {{ model.id_original_model }}
-          </template>
-          <div class="text-sm">
-            {{ model.name.split('/')[0] || model.name }}
-          </div>
-        </UCard>
-      </UScrollArea>    
-      
-      <div class="text-default font-medium mt-3">
-        Датасеты проекта:
-      </div>
-      <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
-        <UCard :ui="{ body: 'p-3 sm:p-3' }" v-for="dataset in thisDatasets" :key="dataset.id_datasets" class="m-4">
-          <span class="font-medium flex justify-between">
-            <ULink as="button" :to="'/dataset/' + dataset.name" class="flex self-center">
-              {{ dataset.name.split('/')[1] || dataset.name }}
-            </ULink>
-            <UButton v-if="editMode"
+
+    <!-- ПРАВАЯ ЧАСТЬ -->
+    <USidebar 
+      side="right"
+      v-model:open="isSidebarRightOpened"
+      collapsible="offcanvas"
+      :ui="{
+          gap: 'h-[calc(100%-var(--ui-header-height))]',
+          container:
+            'absolute top-(--ui-header-height) bottom-0 h-[calc(100%-var(--ui-header-height))]'
+        }"
+    >
+      <template #default="{ state }">
+        <div class="text-default font-medium">
+          Модели проекта:
+        </div>
+        
+        <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
+          <UCard :ui="{ body: 'p-3' }" v-for="model in thisModels" :key="model.id_models" class="m-4 ">
+            <div class="font-medium flex justify-between">
+              {{ model.name.split('/')[1] || model.name }}
+              <UButton v-if="editMode"
                 icon="i-lucide-x" 
                 variant="outline" 
                 size="xs"
                 class="mb-auto"
                 color="error"
-                @click="removeDatasetFromProject(dataset)"
+                @click="removeModelFromProject(model)"
               />
-          </span>
-          <div class="text-sm">
-            {{ dataset.name.split('/')[0] || dataset.name }}
-          </div>
-        </UCard>    
-      </UScrollArea>
-    </div>
+            </div>
+            <template v-if="model.id_original_model" class="text-gray-400">            
+              {{ model.id_original_model }}
+            </template>
+            <div class="text-sm">
+              {{ model.name.split('/')[0] || model.name }}
+            </div>
+          </UCard>
+        </UScrollArea>    
+        
+        <div class="text-default font-medium mt-3">
+          Датасеты проекта:
+        </div>
+        <UScrollArea class="h-[40%] w-full shrink-0 scrollbar-none ring-gray-600 rounded-lg ring shadow-lg">
+          <UCard :ui="{ body: 'p-3' }" v-for="dataset in thisDatasets" :key="dataset.id_datasets" class="m-4">
+            <span class="font-medium flex justify-between">
+              <ULink as="button" :to="'/dataset/' + dataset.name" class="flex self-center">
+                {{ dataset.name.split('/')[1] || dataset.name }}
+              </ULink>
+              <UButton v-if="editMode"
+                  icon="i-lucide-x" 
+                  variant="outline" 
+                  size="xs"
+                  class="mb-auto"
+                  color="error"
+                  @click="removeDatasetFromProject(dataset)"
+                />
+            </span>
+            <div class="text-sm">
+              {{ dataset.name.split('/')[0] || dataset.name }}
+            </div>
+          </UCard>    
+        </UScrollArea>
+      </template>
+    </USidebar>
   </div>
 </template>
