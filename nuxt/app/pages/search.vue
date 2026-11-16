@@ -656,18 +656,17 @@ onMounted(() => {
 
         <div class="h-[90vh] grid grid-cols-[50%_50%] md:grid-cols-[30%_70%] sm:grid-cols-[40%_60%] transform transition-all duration-400">
             
-            <div class="flex flex-col h-fit sm:pr-10 sm:pl-10 md:pr-10 md:pl-10 transform transition-all duration-400">
-                    
-                    <span class="self-center mt-4 text-[1.1rem]">Фильтры</span>
+            <SearchFiltersPanel>
                     <div class="flex flex-row flex-wrap justify-center mb-3 mt-2 gap-2">
-                        <UModal>
+                        <HuggingFaceImportDialog>
+                          <template #trigger>
                             <UButton
                                 label="Добавить модель или датасет"
                                 color="neutral"
                                 variant="outline"
                             />
-
-                            <template #content>
+                          </template>
+                          <div>
                                 <div class="flex flex-col h-full w-full p-4 gap-4 rounded-lg border light:border-gray-300 dark:border-gray-800 shadow-lg">
                                     <div class="flex flex-row items-center flex-nowrap gap-1">
                                         <span class="whitespace-nowrap">Добавление новой модели с 🤗Hugging Face</span>
@@ -773,8 +772,8 @@ onMounted(() => {
                                         </div>
                                     </div>
                                 </div>
-                            </template>
-                        </UModal>
+                          </div>
+                        </HuggingFaceImportDialog>
                     </div>
                     <div class="flex flex-col flex-wrap p-5 gap-1 rounded-lg ring ring-default shadow-lg">
 
@@ -872,11 +871,11 @@ onMounted(() => {
                         </div>
                     </div>
                     </div>
-            </div>
+            </SearchFiltersPanel>
 
 <VList :data="currentData" class="flex h-full overflow-auto p-3 ring ring-default shadow-sm" #default="{ item, index }">
     
-    <div class="flex flex-col rounded-lg gap-4 ring ring-default shadow-sm p-4 h-auto w-full mb-3">
+    <RepositoryResultCard>
                 <div class="flex flex-row">
                     <div class="flex flex-row w-full items-center justify-between">
                         <div class="flex flex-row gap-4 items-center ">
@@ -986,7 +985,7 @@ onMounted(() => {
                         <UBadge v-for="tag in item['tags']" color="neutral" variant="outline" :label="tag"/>
                     </div>
                 </div>
-            </div>
+            </RepositoryResultCard>
 
             </VList>
 

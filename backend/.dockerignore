@@ -1,0 +1,22 @@
+.git
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+
+# Keep secrets out of the build context.
+.env
+**/.env
+**/.env.*
+!**/.env.example
+
+# Runtime data and examples are not required in the application image.
+folder/
+examples/

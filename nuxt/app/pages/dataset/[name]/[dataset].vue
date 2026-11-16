@@ -14,7 +14,6 @@ import { CodeEditor } from 'monaco-editor-vue3';
 import Papa from 'papaparse';
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { object } from 'zod';
-import Chart from 'primevue/chart';
 import { gsap } from 'gsap';
 import { VList } from "virtua/vue";
 
@@ -689,42 +688,9 @@ onUnmounted(() => {
     <div
         class="flex flex-1">
     
-    <div
-        id="chartsidebar"
-        class="absolute z-100 p-4 -left-185 mb-auto bottom-0 bg-slate-900 h-150 w-180 rounded-lg ring ring-default shadow-lg">
-        <p class="flex justify-center mt-2 mb-2 w-full">Характеристики</p>
-        <ClientOnly>
-            <Chart class="h-full" type="bar" :data="pieData" :options="pieOptions" />
-        </ClientOnly>
-    </div>
+    <DatasetLabelStats :data="pieData" :options="pieOptions()" />
 
-    <USidebar
-      v-model:open="openSidebar"
-      variant="sidebar"
-      collapsible="offcanvas"
-      side="left"
-      :ui="{
-          gap: 'h-[calc(100%-var(--ui-header-height))]',
-          container:
-            'absolute top-(--ui-header-height) bottom-0 h-[calc(100%-var(--ui-header-height))]'
-        }"
-    >
-        <div class="flex h-[5%] w-auto justify-center items-center">
-            <h1>Файлы</h1>
-        </div>
-        <!-- <USeparator /> -->
-        
-        <div class="p-2 rounded-lg ring ring-default shadow-lg">
-            <UTree
-                :items="items"
-                orientation="vertical"
-                :ui="{
-                    link: 'p-1.5 overflow-hidden',
-                    listWithChildren: 'ml-3',
-                }"
-            />
-        </div>
-    </USidebar>
+    <DatasetFileSidebar v-model:open="openSidebar" :items="items" />
         
     <div
         class="flex-1 flex flex-col overflow-hidden h-[88vh] w-full
@@ -734,43 +700,13 @@ onUnmounted(() => {
         peer-data-[variant=inset]:ring peer-data-[variant=inset]:ring-default"
     >
     
-    <UContainer
-        class="flex w-full p-5 h-auto items-center 
-        max-w-none transform transition-all duration-200"
-    >
-    
-        <UButton
-            icon="i-lucide-panel-right"
-            color="neutral"
-            variant="ghost"
-            aria-label="Toggle sidebar"
-            class="mb-auto flex"
-            @click="openSidebar = !openSidebar"
-        />
-        
-        <ULink class="ml-4 flex justify-center self-center">{{ route.params.name }}/{{ route.params.dataset }}</ULink>
-        
-        <UButton
-            v-if="IsPaginator"
-            icon="i-lucide-palette"
-            color="neutral"
-            variant="ghost"
-            aria-label="Toggle sidebar"
-            class="ml-6 mb-auto"
-            @click="openSidebarMarksFun"
-        />
-
-        <UButton
-            @click="saveChanges"
-            label="Сохранить"
-            color="success" 
-            variant="subtle"
-            :ui="{
-                base:'ml-auto'
-            }" 
-        />
-        <span class="ml-2 text-success/60">ctrl+s</span>
-    </UContainer>
+    <DatasetEditorToolbar
+      :dataset-path="`${route.params.name}/${route.params.dataset}`"
+      :show-label-controls="IsPaginator"
+      @toggle-files="openSidebar = !openSidebar"
+      @toggle-labels="openSidebarMarksFun"
+      @save="saveChanges"
+    />
         
         <UTabs
             v-model:model-value="tab"
@@ -937,15 +873,15 @@ onUnmounted(() => {
                         </template>
                     <div>
                         <p class="flex flex-wrap gap-2" v-for="(text, i) in paginated">
-                            <span 
-                                v-for="(word, k) in text"
-                                :data-i="i"
-                                :data-k="k"
-                                :class="(classMatrix?.[i]?.[k] ?? '') + ' rounded-sm mt-1 pl-1 pr-1'"
-                                @contextmenu.capture="RightClick($event, i, k)"
-                            >
-                            {{ word }}
-                            </span>
+                            <AnnotatedToken
+                              v-for="(word, k) in text"
+                              :key="k"
+                              :word="word"
+                              :row-index="i"
+                              :word-index="k"
+                              :color-class="classMatrix?.[i]?.[k] ?? ''"
+                              @contextmenu="RightClick"
+                            />
                         </p>
                     </div>
                 </UContextMenu>
@@ -954,27 +890,7 @@ onUnmounted(() => {
         </Utabs>
     </div>
 
-    <USidebar
-        v-model:open="openSidebarMarks"
-        variant="inset"
-        title="Цвета тегов"
-        collapsible="offcanvas"
-        side="right"
-        mode="slideover"
-        :ui="{
-            root: 'h-[20svh]',
-            container:
-                'flex flex-col mt-4 rounded-lg ring ring-default shadow-lg top-(--ui-header-height) bottom-0 h-[calc(80%-var(--ui-header-height))]'
-            }"
-        >
-
-        <UBadge v-for="mark in dictOfMarksAndBG"
-        class="text-gray font-medium"
-        :label="mark[0]" 
-        variant="soft" 
-        :class="mark[1]" />
-
-    </USidebar>
+    <DatasetLabelLegend v-model:open="openSidebarMarks" :marks="dictOfMarksAndBG" />
 
 </div>
 <UPagination

@@ -8,10 +8,22 @@ pip install -r requirements.txt
 
 
 ### ЗАПУСК
-```uvicorn routers.route_auth:app --host localhost --port 8001```
-```uvicorn routers.route_datasets:app --host localhost --port 8002```
-```uvicorn routers.route_models:app --host localhost --port 8003```
-```uvicorn routers.route_projects:app --host localhost --port 8004```
+```uvicorn services.service_auth:app --host localhost --port 8001```
+```uvicorn services.service_datasets:app --host localhost --port 8002```
+```uvicorn services.service_models:app --host localhost --port 8003```
+```uvicorn services.service_projects:app --host localhost --port 8004```
+
+### ЗАПУСК в Docker
+Сборка образа (из корня репозитория):
+```
+docker build -t mori-backend ./backend
+```
+
+Запуск с настройками PostgreSQL из `backend/settings/.env` и постоянным хранилищем:
+```
+docker run --rm -p 8000:8000 --env-file backend/settings/.env -e STORAGE_FULL_PATH=/app/userdata -v mori-backend-data:/app/userdata mori-backend
+```
+Значения `BD_ADDR`, `BD_PORT`, `BD_NAME`, `BD_USER`, `BD_PASSWORD` и `SECRET_KEY` должны быть заданы в env-файле. Адрес PostgreSQL должен быть доступен из контейнера. Данные из `backend/folder` в образ не включаются; подключите их отдельно в `/app/userdata`, если они нужны.
 
 Для получения секретного ключа (выполнить в git):\
 ```openssl rand -hex 32```

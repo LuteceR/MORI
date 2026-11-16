@@ -68,33 +68,13 @@ const onSubmit = handleSubmit(async (data) => {
     }
 })
 
-const isTogglePassword = ref(true);
 const remember = ref(false);
+const isPasswordVisible = ref(false);
 
 </script>
 
 <template>
-        <div>
-            <div class="mx-auto sm:mt-25 mt-5 px-4 py-20">
-                <div class="flex flex-col items-center text-center space-y-4">
-                    <div id="logo" class="flex items-center flex-col">
-                        <h1 
-                        class="font-mono text-7xl font-bold transform transition-all duration-200 dark:text-gray-300 text-gray-800">
-                            МОРИ
-                        </h1>
-                        <p 
-                        class="mt-4 font-sans text-2xl/2 opacity-0 sm:opacity-100 dark:text-gray-300 text-gray-800
-                                transform transition-all duration-200">
-                            Машинное Обучение :
-                        </p>
-                        <p class="mt-2 font-sans text-2xl opacity-0 sm:opacity-100 dark:text-gray-300 text-gray-800
-                                transform transition-all duration-200">
-                            Разворачивание и Исследование
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <AuthBrand />
 
     <form id="authForm" @submit="onSubmit">
         <div class="flex flex-col p-6 rounded-[6px] w-full absoulute -mt-45 sm:-mt-10
@@ -132,44 +112,36 @@ const remember = ref(false);
               <VeeField v-slot="{ field, errorMessage }" name="password">
                 <div class="flex flex-col w-full mt-2">
                     <UFormField class="text-slate-300 mb-3 md:text-[1rem] lg:text-[1rem]" label="пароль" :error="errorMessage" required>
-                    <div class="flex flex-row rounded-[6px]">
-                        <UInput 
-                          id="password"
-                          v-bind="field"
-                          size="lg"
-                          :type="isTogglePassword ? 'password' : 'text'"
-                          :placeholder="isTogglePassword ? '••••••••' : 'password'"
-                          :aria-invalid="!!errorMessage"
-                          class="flex font-bold font-mono w-full
-                          rounded-r-none rounded-[6px]"
-                          autocomplete="off"/>
-                    <UButton 
-                        @click = 'isTogglePassword = !isTogglePassword' 
-                        variant="outline" 
+                    <PasswordField v-model:visible="isPasswordVisible" :error="!!errorMessage" v-slot="{ type, placeholder }">
+                      <UInput
+                        id="password"
+                        v-bind="field"
                         size="lg"
-                        class="flex self-center rounded-l-none"
-                        :icon="isTogglePassword ? 'i-lucide-eye' : 'i-lucide-eye-off'"
-                        :color='errorMessage? "error" : "primary"'>
-                    </UButton>
-                    </div>
+                        :type="type"
+                        :placeholder="placeholder"
+                        :aria-invalid="!!errorMessage"
+                        class="flex font-bold font-mono w-full rounded-r-none rounded-[6px]"
+                        autocomplete="off"
+                      />
+                    </PasswordField>
                     </UFormField>
                 </div>
               </VeeField>
               <VeeField v-slot="{ field, errorMessage }" name="confirmPassword">
                 <div class="flex flex-col w-full mt-2">
                 <UFormField class="text-slate-300 mb-3 md:text-[1rem] lg:text-[1rem]" label="повтор пароля" :error="errorMessage" required>
-                    <div class="flex flex-row rounded-[6px]">
-                    <UInput 
+                    <PasswordField v-model:visible="isPasswordVisible" :error="!!errorMessage" v-slot="{ type, placeholder }">
+                      <UInput
                         id="confirmPassword"
                         v-bind="field"
                         size="lg"
-                        :type="isTogglePassword ? 'password' : 'text'"
-                        :placeholder="isTogglePassword ? '••••••••' : 'password'"
+                        :type="type"
+                        :placeholder="placeholder"
                         :aria-invalid="!!errorMessage"
-                        class="flex font-bold font-mono w-full
-                        rounded-r-none rounded-[6px]"
-                        autocomplete="off"/>
-                    </div>
+                        class="flex font-bold font-mono w-full rounded-r-none rounded-[6px]"
+                        autocomplete="off"
+                      />
+                    </PasswordField>
                 </UFormField>
                 </div>
             </VeeField>

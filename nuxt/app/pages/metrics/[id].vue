@@ -38,10 +38,6 @@ var details = await $fetch<MetricsResponse>(`/metrics/details/?metric_id=${metri
 const [datePart, timePart] = details.date.split('T');
 details.date = `${timePart?.split('.')[0]} ${datePart}`;
 
-function truncate(str: string, max: number) {
-  return str.length > max ? str.slice(0, max) + "..." : str;
-}
-
 </script>
 <template>
     <div class="flex justify-center h-full m-8">
@@ -62,40 +58,11 @@ function truncate(str: string, max: number) {
         
         <div class="p-4 max-w-[60%]">
             Ошибки модели  
-            <div v-for="(error_line, index) in details.error_lines" 
+            <MetricErrorLine
+                v-for="(error_line, index) in details.error_lines"
                 :key="index"
-                class="mb-6 p-4 border rounded-lg mr-auto"
-            >
-                <div class="flex flex-wrap gap-2">
-                    <div 
-                        v-for="(word, wordIndex) in error_line.words"
-                        :key="wordIndex"
-                        class="inline-block"
-                    >
-                        <UPopover>
-                            <div :class="[
-                                    'px-2 py-1 rounded',
-                                    wordIndex === error_line.word_id 
-                                    ? 'border-2 border-red-500' 
-                                    : 'border'
-                                ]">
-                                <span class="text-sm">{{ truncate(word, 50) }}</span>
-                            </div>
-                            
-                            <template #content>
-                                <div class="flex gap-1">
-                                    <span class="px-1 py-0.5 bg-green-100 text-green-800 rounded">
-                                    pred: {{ error_line.true_labels[wordIndex] }}
-                                    </span>
-                                    <span class="px-1 py-0.5 bg-blue-100 text-blue-800 rounded">
-                                    true: {{ error_line.pred_labels[wordIndex] }}
-                                    </span>
-                                </div>
-                            </template>
-                        </UPopover>
-                    </div>
-                </div>
-            </div>
+                :error-line="error_line"
+            />
         </div>
     </div> 
 </template>

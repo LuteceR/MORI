@@ -393,48 +393,18 @@ async function runModel() {
           </template>
         </UModal>
         
-        <UModal title="Запустить модель" :dismissible="false">
-          <UButton 
-            label='Запустить модель' 
-            icon='i-lucide-chart-line' 
-            color="neutral"
-            variant="outline"
-            @click=""
-          />
-          <template #body>
-            <USelectMenu class="mb-4 w-[85%]" v-model="modelToAdd" :items="thisModels.map(model => model.name)" placeholder="Выберете модель"/>
-            <USelectMenu class="mb-4 w-[85%]" v-model="datasetToAdd" :items="thisDatasets.map(dataset => dataset.name)" placeholder="Выберете датасет"/>
-            <UFormField label="Путь до файла">
-              <UInput class="mb-4 w-[85%]" v-model="runFilePath" placeholder="test.jsonl" required/>
-            </UFormField>
-            <UFormField label="Ключ в файле, где хранится текст">
-              <UInput class="mb-4 w-[85%]" v-model="runWordsKey" placeholder="words" required/>
-            </UFormField>
-            <UFormField label="Ключ в файле, где хранится NER-метки">
-              <UInput class="mb-4 w-[85%]" v-model="runNERKey" placeholder="ner" required/>
-            </UFormField>
-            <UFormField>
-              <div class="flex items-center gap-2">
-                <UTooltip text="Если уверенность модели меньше порога, ставится метка 'O'">
-                  <UCheckbox 
-                    v-model="showThreshold" 
-                    label="Порог"
-                    size="md"
-                  />
-                <UInput
-                  v-if="showThreshold"v-model="thresholdValue" class="w-24"
-                  type="number" step="0.05" min="0" max="1" placeholder="0.5"
-                />
-                </UTooltip>
-              </div>
-            </UFormField>
-          </template>
-
-          <template #footer="{ close }">
-            <UButton label="Отмена" color="neutral" variant="outline" @click="close" />
-            <UButton label="Запустить модель" color="neutral" @click="runModel(); close()"/>
-          </template>
-        </UModal>
+        <RunModelDialog
+          v-model:model-name="modelToAdd"
+          v-model:dataset-name="datasetToAdd"
+          v-model:file-path="runFilePath"
+          v-model:words-key="runWordsKey"
+          v-model:ner-key="runNERKey"
+          v-model:show-threshold="showThreshold"
+          v-model:threshold-value="thresholdValue"
+          :models="thisModels.map(model => model.name)"
+          :datasets="thisDatasets.map(dataset => dataset.name)"
+          @run="runModel"
+        />
       </template>
     </USidebar>
 
@@ -480,44 +450,14 @@ async function runModel() {
         <div v-if="thisMetrics.length == 0" class="text-center h-dvh mt-6">
           Вы ещё не запускали модели в этом проекте
         </div>
-        <UCard v-for="(metric, index) in thisMetrics" :key="metric.id_metrics" class="m-4 w-[95%]">
-          <template #header>
-            <div class="text-xl flex justify-between items-center">
-              <span> Запуск #{{ index + 1 }}</span>
-              <span class="flex items-center">
-                <span class="text-sm"> {{ metric.date }}</span>
-                <UButton v-if="editMode"
-                  icon="i-lucide-x" 
-                  variant="outline" 
-                  size="xs"
-                  class="ml-3"
-                  color="error"
-                  @click="removeRunResult(metric)"
-                />
-              </span>
-            </div>
-          </template>
-          <div class="flex flex-col md:flex-row md:justify-between md:items-end">
-            <div class="max-w-110 md:order-first">
-              <div class="w-full"> Модель {{ metric.name }} </div>
-              <div class="w-full"> Датасет {{ metric.name_1 }} </div>
-              Метрики  
-              <div class="w-full ml-4">
-                <div v-for="m_result in metric.metrics_data">
-                  <div class="w-full"> {{ m_result.name }}: {{ m_result.value % 1 == 0? m_result.value:  m_result.value.toFixed(4)}} </div>
-                </div>
-              </div>
-            </div>
-            <UButton 
-                size="lg" 
-                label="Подробный отчёт" 
-                color="primary"
-                class="mt-4 md:mt-0 md:order-last"
-                leadingIcon='i-lucide-arrow-up-right'
-                :to="`/metrics/${metric.id_metrics}`"
-              />
-          </div>
-        </UCard>
+        <MetricRunCard
+          v-for="(metric, index) in thisMetrics"
+          :key="metric.id_metrics"
+          :metric="metric"
+          :index="index"
+          :edit-mode="editMode"
+          @remove="removeRunResult(metric)"
+        />
       </UScrollArea>
     </div>
 

@@ -4,9 +4,9 @@ import shutil
 
 import os
 
-from fastapi import FastAPI, HTTPException, status, Response
+from fastapi import HTTPException, status
 from fastapi import HTTPException
-from fastapi import File, UploadFile
+from fastapi import UploadFile
 
 from sqlalchemy import insert, select, delete, and_
 import aiofiles
@@ -14,7 +14,6 @@ import aiofiles
 from models import users, models, datasets, projects, projects_models, projects_datasets
 from db import database, STORAGE_FULL_PATH
 from modelsFromHF import ModelsFolder
-from metrics import storeResults
 
 def create_file_system_structure(storage_full_path:str):
     """

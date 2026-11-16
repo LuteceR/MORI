@@ -1,4 +1,23 @@
+# Dependencies installed inside the image
 node_modules
-.nuxt
-.github
 .pnpm-store
+
+# Generated Nuxt files
+.nuxt
+.output
+dist
+
+# Git metadata
+.git
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS/editor files
+.DS_Store
+.vscode

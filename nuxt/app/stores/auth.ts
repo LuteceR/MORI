@@ -6,15 +6,20 @@ export const useAuthStore = defineStore('auth', () => {
 
     const fetchUser = async () => {
         try {
-            const response = await fetch(new URL('/me', apiBaseAuth),
-                {
-                    credentials: 'include',
-                }
-            )
-            
-            user.value = await response.json();
-        } catch {
-            user.value = null;
+            const response = await fetch(new URL('/me', apiBaseAuth), {
+                credentials: 'include',
+            })
+
+            if (!response.ok) {
+                user.value = null
+                return
+            }
+
+            user.value = await response.json()
+
+        } catch (error) {
+            console.error('Failed to fetch user:', error)
+            user.value = null
         }
     }
 

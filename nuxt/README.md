@@ -3,15 +3,15 @@
 [![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 
 ## Setup
-Install pnpm
+Enable Corepack so it uses the pnpm version pinned in `package.json`:
 ```bash [Terminal]
-npm install -g pnpm@latest-11
+corepack enable
 ```
 
 Make sure to install the dependencies:
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 ## Development Server

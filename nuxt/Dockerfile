@@ -1,14 +1,27 @@
-FROM node:22
+FROM node:22-slim AS build
 
 WORKDIR /src
 
-COPY package.json pnpm-lock.yaml ./
+RUN corepack enable
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN pnpm install --frozen-lockfile --ignore-scripts
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+RUN pnpm run build
+
+FROM node:22-slim AS production
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+
+COPY --from=build /src/.output ./.output
+
 EXPOSE 3000
 
-CMD ["pnpm", "dev", "--host"]
+CMD ["node", ".output/server/index.mjs"]
